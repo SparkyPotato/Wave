@@ -1,2 +1,2 @@
-# wave
-General-purpose programming language
+# Wave
+A general purpose programming language, currently in development.
