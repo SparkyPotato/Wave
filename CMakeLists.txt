@@ -10,7 +10,7 @@ if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
 			WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 			RESULT_VARIABLE GIT_SUBMOD_RESULT)
 		if(NOT GIT_SUBMOD_RESULT EQUAL "0")
-			message(FATAL_ERROR "Updating submodules failed with code ${GIT_SUBMOD_RESULT}, please checkout submodules")
+			message(FATAL_ERROR "Updating submodules failed with code ${GIT_SUBMOD_RESULT}.")
 		endif()
 	endif()
 endif()
@@ -19,6 +19,11 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/Libraries)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/Libraries)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/Binaries)
 
+set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/CMake" ${CMAKE_MODULE_PATH})
+
 add_subdirectory(Compiler)
 add_subdirectory(Driver)
+
+add_subdirectory(Docs)
+
 add_subdirectory(Tests)

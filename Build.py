@@ -50,9 +50,7 @@ def GenerateFiles(args):
 
 def Build():
     value = subprocess.call(
-        "cmake --build .", 
-        stdout=subprocess.DEVNULL,
-        stderr=sys.stderr
+        "cmake --build ."
     )
     
     if value != 0:
