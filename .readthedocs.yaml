@@ -9,4 +9,4 @@ formats:
 python:
   version: 3.7
   install:
-    - requirements: Docs/Source/Requirements.txt
+    - requirements: Docs/Requirements.txt
