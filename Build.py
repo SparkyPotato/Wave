@@ -32,6 +32,14 @@ def GenerateFiles(args):
     # Turn submodule updating off
     if args.nosub:
         options += " -DSUBMODULE=OFF "
+
+    # Turn documentation building off
+    if args.nodoc:
+        options += "-DBUILD_DOCS=OFF "
+
+    # Turn tests off
+    if args.notest:
+        options += "-DBUILD_TESTS=OFF "
     
     # Generate CMake files
     value = subprocess.call(
@@ -80,6 +88,20 @@ def Main():
         action="store_false",
         help="Disable updating submodules, only turn off if you have made changes to them.",
         dest="nosub"
+    )
+
+    parser.add_argument(
+        "-nodoc", "--nodocumentation",
+        action="store_false",
+        help="Do not build the Wave documentation.",
+        dest="nodoc"
+    )
+
+    parser.add_argument(
+        "-notest", 
+        action="store_false",
+        help="Do not build the Wave testing suites.",
+        dest="notest"
     )
     
     args = parser.parse_args()

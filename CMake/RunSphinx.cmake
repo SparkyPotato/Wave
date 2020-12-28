@@ -1,4 +1,4 @@
-find_package(Sphinx REQUIRED)
+find_package(Sphinx REQUIRED QUIET)
 
 set(SPHINX_BUILD ${CMAKE_CURRENT_BINARY_DIR}/Docs/Sphinx)
 
