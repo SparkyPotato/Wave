@@ -81,4 +81,4 @@ if onRTD:
     outputDir = 'Build'
     ConfigureDoxygen(inputDir, outputDir)
     subprocess.call('doxygen', shell=True)
-    breathe_projects['Wave'] = output_dir + '/xml'
+    breathe_projects['Wave'] = outputDir + '/xml'
