@@ -76,6 +76,7 @@ onRTD = os.environ.get('READTHEDOCS', None) == 'True'
 breathe_projects = {}
 
 if onRTD:
+    os.chdir(os.path.realpath(os.path.dirname(os.path.dirname(__file__))))
     inputDir = '..'
     outputDir = 'Build'
     ConfigureDoxygen(inputDir, outputDir)
