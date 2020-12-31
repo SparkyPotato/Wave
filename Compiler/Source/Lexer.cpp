@@ -12,4 +12,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "CompileContext.h"
+#include "Lexer.h"
+
+#include <iostream>
+
+namespace Wave {
+
+Lexer::Lexer(CompileContext& context, const std::filesystem::path& filePath, std::istream& stream)
+	: m_Context(context), m_File(filePath), m_Stream(stream)
+{}
+
+void Lexer::Lex()
+{
+	while (m_Stream.good())
+	{
+		char c = GetChar();
+	}
+}
+
+const std::vector<Wave::Diagnostic>& Lexer::GetDiagnostics()
+{
+	return m_Diagnostics;
+}
+
+char Lexer::GetChar()
+{
+	char c;
+	m_Stream.get(c);
+	return c;
+}
+
+}

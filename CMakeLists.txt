@@ -15,8 +15,8 @@ if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
 	endif()
 endif()
 
-option(BUILD_DOCS "Build the documentation" ON)
-option(BUILD_TESTS "Build the tests" ON)
+option(WAVE_BUILD_DOCS "Build the documentation" ON)
+option(WAVE_BUILD_TESTS "Build the tests" ON)
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/Libraries)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/Libraries)
@@ -27,10 +27,10 @@ set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/CMake" ${CMAKE_MODULE_PATH})
 add_subdirectory(Compiler)
 add_subdirectory(Driver)
 
-if (BUILD_DOCS)
+if (WAVE_BUILD_DOCS)
 	add_subdirectory(Docs)
 endif ()
 
-if (BUILD_TESTS)
+if (WAVE_BUILD_TESTS)
 	add_subdirectory(Tests)
 endif ()
