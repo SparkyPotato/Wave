@@ -28,11 +28,13 @@ namespace Wave {
 /// Type of a lexer token.
 enum class TokenType
 {
+	// Single character tokens
 	LeftParenthesis, RightParenthesis, 
 	LeftBrace, RightBrace,
 	LeftIndex, RightIndex,
 	Comma, Period, Minus, Plus, Colon, Semicolon, Slash, Star,
-
+	
+	// Single or double character tokens
 	Not, NotEqual,
 	Equal, EqualEqual,
 	Greater, GreaterEqual,
@@ -46,8 +48,8 @@ enum class TokenType
 	If, Else,
 	True, False,
 	For, While,
-	Class, 
-	Static, Copy, Const,
+	Class, Interface, Abstract,
+	Static, Const, Copy,
 	Public, Private, Protected,
 	Function, Return,
 	IntegerType, RealType, StringType, BoolType,

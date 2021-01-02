@@ -1,0 +1,12 @@
+expression = equality;
+equality = comparison, { ( "!=" | "==" ), comparison };
+comparison = term, { ( ">" | ">=" | "<" | "<=" ), term ) };
+term = factor, { ( "-" | "+" ), factor ) };
+factor = unary, { ( "/" | "*" ), unary ) };
+unary = ( ( "!" | "-" ), unary ) | primary ;
+primary = int | real | string | bool | ( "(", expression, ")" );
+
+int = ? lexer integer literal ?;
+real = ? lexer real literal ?;
+string = ? lexer string literal ?;
+bool = "true" | "false";

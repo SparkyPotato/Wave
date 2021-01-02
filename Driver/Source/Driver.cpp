@@ -14,7 +14,7 @@
 
 #include <fstream>
 
-#include "WaveCompiler/Parser.h"
+#include "WaveCompiler/Parser/Parser.h"
 
 #include "ArgParse.h"
 #include "DiagnosticReporter.h"

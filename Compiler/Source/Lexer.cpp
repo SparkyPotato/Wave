@@ -190,6 +190,8 @@ void Lexer::PrettyPrint()
 		case TokenType::For: std::cout << "for"; break;
 		case TokenType::While: std::cout << "while"; break;
 		case TokenType::Class: std::cout << "class"; break;
+		case TokenType::Interface: std::cout << "interface"; break;
+		case TokenType::Abstract: std::cout << "abstract"; break;
 		case TokenType::Static: std::cout << "static"; break;
 		case TokenType::Copy: std::cout << "copy"; break;
 		case TokenType::Const: std::cout << "const"; break;
@@ -406,6 +408,8 @@ static std::map<std::string, TokenType> s_Reserved =
 	{ "for", TokenType::For },
 	{ "while", TokenType::While },
 	{ "class", TokenType::Class },
+	{ "interface", TokenType::Interface },
+	{ "abstract", TokenType::Abstract },
 	{ "static", TokenType::Static },
 	{ "copy", TokenType::Copy },
 	{ "const", TokenType::Const },
