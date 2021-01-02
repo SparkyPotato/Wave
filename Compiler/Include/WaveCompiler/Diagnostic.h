@@ -35,14 +35,11 @@ struct WAVEC_API FileMarker
 	/// Path of the file the marker points to.
 	std::filesystem::path File;
 
-	/// Line of the marker.
-	uint64_t Line = 1;
+	/// Position of the first character of the marker. 0 is the first character of the stream.
+	uint64_t Pos = 0;
 
-	/// Column of the first character of the marker.
-	uint64_t Column = 1;
-
-	/// Length of the marked area (including the first character).
-	uint64_t Length = 1;
+	/// Length of the marker, including the first character.
+	uint64_t Length = 0;
 };
 
 /// Severity of diagnostic.
@@ -62,7 +59,7 @@ struct WAVEC_API Diagnostic
 	/// \param marker The marker to move into the FileMarker.
 	/// \param severity The severity of the diagnostic.
 	/// \param message The diagnostic message.
-	Diagnostic(const FileMarker& marker,DiagnosticSeverity severity, const std::string& message)
+	Diagnostic(const FileMarker& marker, DiagnosticSeverity severity, const std::string& message)
 		: Marker(marker), Severity(severity), Message(message)
 	{}
 

@@ -15,18 +15,200 @@
 #include "Lexer.h"
 
 #include <iostream>
+#include <map>
+#include <sstream>
 
 namespace Wave {
 
 Lexer::Lexer(CompileContext& context, const std::filesystem::path& filePath, std::istream& stream)
-	: m_Context(context), m_File(filePath), m_Stream(stream)
+	: m_Context(context), m_Marker(filePath), m_Stream(stream)
 {}
+
+bool IsAlphabet(char c)
+{
+	return (c >= 'A' && c <= 'Z') ||
+		(c >= 'a' && c <= 'z') ||
+		c == '_';
+}
 
 void Lexer::Lex()
 {
 	while (m_Stream.good())
 	{
 		char c = GetChar();
+
+		switch (c)
+		{
+		// Single character tokens
+		case '(': PushToken(TokenType::LeftParenthesis); break;
+		case ')': PushToken(TokenType::RightParenthesis); break;
+		case '{': PushToken(TokenType::LeftBrace); break;
+		case '}': PushToken(TokenType::RightBrace); break;
+		case '[': PushToken(TokenType::LeftIndex); break;
+		case ']': PushToken(TokenType::RightIndex); break;
+		case ',': PushToken(TokenType::Comma); break;
+		case '.': PushToken(TokenType::Period); break;
+		case '-': PushToken(TokenType::Minus); break;
+		case '+': PushToken(TokenType::Plus); break;
+		case ':': PushToken(TokenType::Colon); break;
+		case ';': PushToken(TokenType::Semicolon); break;
+		case '*': PushToken(TokenType::Star); break;
+		// Double character tokens
+		case '=':
+			PushToken(LookAhead('=') ? TokenType::EqualEqual : TokenType::Equal);
+			break;
+		case '!':
+			PushToken(LookAhead('=') ? TokenType::NotEqual : TokenType::Not);
+			break;
+		case '>':
+			PushToken(LookAhead('=') ? TokenType::GreaterEqual : TokenType::Greater);
+			break;
+		case '<':
+			PushToken(LookAhead('=') ? TokenType::LesserEqual : TokenType::Lesser);
+			break;
+		// Comments are special
+		case '/':
+			if (LookAhead('/'))
+			{
+				char c;
+				do { c = GetChar(); } while (c != '\n' && m_Stream.good());
+
+				m_Marker.Pos += m_Marker.Length;
+				m_Marker.Length = 0;
+			}
+			else if (LookAhead('*'))
+			{
+				FileMarker marker = m_Marker;
+
+				bool star, slash;
+				do 
+				{
+					star = GetChar() == '*';
+					slash = LookAhead('/');
+				} while (!(star && slash) && m_Stream.good());
+
+				// We hit the end of the stream.
+				if (!slash || !star)
+				{
+					m_Diagnostics.emplace_back(
+						marker,
+						DiagnosticSeverity::Error,
+						"multiline comment did not end"
+					);
+				}
+
+				m_Marker.Pos += m_Marker.Length;
+				m_Marker.Length = 0;
+			}
+			else { PushToken(TokenType::Slash); }
+			break;
+		// Literals
+		case '"': StringLiteral(); break;
+		// Numberssss
+		case '0':
+		case '1':
+		case '2':
+		case '3':
+		case '4':
+		case '5':
+		case '6':
+		case '7':
+		case '8':
+		case '9': NumberLiteral(c); break;
+		// Whitespace
+		case ' ':
+		case '\r':
+		case '\t':
+		case '\n':
+			m_Marker.Pos += m_Marker.Length;
+			m_Marker.Length = 0;
+			break;
+		default:
+			if (IsAlphabet(c)) { Identifier(c); }
+			else
+			{
+				std::ostringstream ss;
+				ss << "Unexpected character '" << c << "'";
+
+				m_Diagnostics.emplace_back(
+					m_Marker,
+					DiagnosticSeverity::Error,
+					ss.str()
+				);
+				m_Marker.Pos += m_Marker.Length;
+				m_Marker.Length = 0;
+			}
+		}
+	}
+
+	if (m_Context.IsDebugOutputEnabled()) 
+	{
+		std::cout << "LEXER OUTPUT: \n\n";
+		PrettyPrint(); 
+	}
+}
+
+void Lexer::PrettyPrint()
+{
+	for (auto& token : m_Tokens)
+	{
+		std::cout << "Pos: " << token.Marker.Pos << ", Length: " << token.Marker.Length << "\n";
+		switch (token.Type)
+		{
+		case TokenType::LeftParenthesis: std::cout << "("; break;
+		case TokenType::RightParenthesis: std::cout << ")"; break;
+		case TokenType::LeftBrace: std::cout << "{"; break;
+		case TokenType::RightBrace: std::cout << "}"; break;
+		case TokenType::LeftIndex: std::cout << "["; break;
+		case TokenType::RightIndex: std::cout << "]"; break;
+		case TokenType::Comma: std::cout << ","; break;
+		case TokenType::Period: std::cout << "."; break;
+		case TokenType::Minus: std::cout << "-"; break;
+		case TokenType::Plus: std::cout << "+"; break;
+		case TokenType::Colon: std::cout << ":"; break;
+		case TokenType::Semicolon: std::cout << ";"; break;
+		case TokenType::Slash: std::cout << "/"; break;
+		case TokenType::Star: std::cout << "*"; break;
+		case TokenType::Not: std::cout << "!"; break;
+		case TokenType::NotEqual: std::cout << "!="; break;
+		case TokenType::Equal: std::cout << "="; break;
+		case TokenType::EqualEqual: std::cout << "=="; break;
+		case TokenType::Greater: std::cout << ">"; break;
+		case TokenType::GreaterEqual: std::cout << ">="; break;
+		case TokenType::Lesser: std::cout << "<"; break;
+		case TokenType::LesserEqual: std::cout << "<="; break;
+		case TokenType::Identifier: std::cout << "Identifier: "; std::visit([](auto& val) { std::cout << val; }, token.Value); break;
+		case TokenType::String: std::cout << "String: "; std::visit([](auto& val) { std::cout << val; }, token.Value); break;
+		case TokenType::Integer: std::cout << "Integer: "; std::visit([](auto& val) { std::cout << val; }, token.Value); break;
+		case TokenType::Real: std::cout << "Real: "; std::visit([](auto& val) { std::cout << val; }, token.Value); break;
+		case TokenType::And: std::cout << "and"; break;
+		case TokenType::Or: std::cout << "or"; break;
+		case TokenType::If: std::cout << "if"; break;
+		case TokenType::Else: std::cout << "else"; break;
+		case TokenType::True: std::cout << "true"; break;
+		case TokenType::False: std::cout << "false"; break;
+		case TokenType::For: std::cout << "for"; break;
+		case TokenType::While: std::cout << "while"; break;
+		case TokenType::Class: std::cout << "class"; break;
+		case TokenType::Static: std::cout << "static"; break;
+		case TokenType::Copy: std::cout << "copy"; break;
+		case TokenType::Const: std::cout << "const"; break;
+		case TokenType::Public: std::cout << "public"; break;
+		case TokenType::Private: std::cout << "private"; break;
+		case TokenType::Protected: std::cout << "protected"; break;
+		case TokenType::Function: std::cout << "func"; break;
+		case TokenType::Return: std::cout << "return"; break;
+		case TokenType::IntegerType: std::cout << "int"; break;
+		case TokenType::RealType: std::cout << "real"; break;
+		case TokenType::StringType: std::cout << "string"; break;
+		case TokenType::BoolType: std::cout << "bool"; break;
+		case TokenType::Module: std::cout << "module"; break;
+		case TokenType::Import: std::cout << "import"; break;
+		case TokenType::As: std::cout << "as"; break;
+		case TokenType::Export: std::cout << "export"; break;
+		}
+
+		std::cout << "\n\n";
 	}
 }
 
@@ -35,11 +217,234 @@ const std::vector<Wave::Diagnostic>& Lexer::GetDiagnostics()
 	return m_Diagnostics;
 }
 
+const std::vector<Wave::Token>& Lexer::GetTokens() const
+{
+	return m_Tokens;
+}
+
 char Lexer::GetChar()
 {
 	char c;
 	m_Stream.get(c);
+
+	m_Marker.Length++;
+	
 	return c;
+}
+
+bool Lexer::LookAhead(char c)
+{
+	char next;
+	m_Stream.get(next);
+
+	if (next == c)
+	{
+		m_Marker.Length++;
+		return true;
+	}
+	else
+	{
+		m_Stream.seekg(-1, std::ios_base::cur);
+		return false;
+	}
+}
+
+char Lexer::Peek()
+{
+	char next;
+	m_Stream.get(next);
+	m_Stream.seekg(-1, std::ios_base::cur);
+	return next;
+}
+
+void Lexer::PushToken(TokenType type)
+{
+	m_Tokens.emplace_back(m_Marker, type);
+	m_Marker.Pos += m_Marker.Length;
+	m_Marker.Length = 0;
+}
+
+void Lexer::PushToken(TokenType type, const std::variant<std::string, int64_t, double>& value)
+{
+	m_Tokens.emplace_back(m_Marker, type, value);
+	m_Marker.Pos += m_Marker.Length;
+	m_Marker.Length = 0;
+}
+
+void Lexer::StringLiteral()
+{
+	std::string source;
+	bool quote, slash;
+
+	do
+	{
+		if (LookAhead('\n'))
+		{
+			m_Diagnostics.emplace_back(
+				m_Marker,
+				DiagnosticSeverity::Error,
+				"string not terminated"
+			);
+			return;
+		}
+
+		char c = GetChar();
+		
+		// All just to allow escaped double quotes
+		slash = c == '\\';
+		quote = LookAhead('"');
+
+		if (quote && slash)
+		{
+			source += '"';
+		}
+		else
+		{
+			source += c;
+		}
+	} while (!quote || (quote && slash));
+
+	if (!m_Stream.good())
+	{
+		m_Diagnostics.emplace_back(
+			m_Marker,
+			DiagnosticSeverity::Error,
+			"string not terminated"
+		);
+		return;
+	}
+
+	std::string value;
+
+	// Unescaping other stuff now
+	for (uint64_t i = 0; i < source.size() - 1; i++)
+	{
+		if (source[i] == '\\')
+		{
+			switch (source[i + 1])
+			{
+			case 'a': value += '\a'; break;
+			case 'n': value += '\n'; break;
+			case 't': value += '\t'; break;
+			case '\\': value += '\\'; break;
+			default:
+				std::ostringstream ss;
+				FileMarker marker = m_Marker;
+				marker.Pos += i + 2;
+				marker.Length = 2;
+				ss << "unrecognized escape sequence '\\" << source[i + 1] << '\'';
+				m_Diagnostics.emplace_back(
+					marker,
+					DiagnosticSeverity::Error,
+					ss.str()
+				);
+				break;
+			}
+		}
+		else
+		{
+			value += source[i];
+		}
+	}
+
+	PushToken(TokenType::String, value);
+}
+
+void Lexer::NumberLiteral(char c)
+{
+	std::string literal;
+	literal += c;
+
+	char n = Peek();
+	while (n >= '0' && n <= '9')
+	{
+		literal += n;
+		GetChar();
+		n = Peek();
+	}
+
+	bool isDecimal = false;
+	if (n == '.')
+	{
+		GetChar();
+		isDecimal = true;
+
+		literal += n;
+		n = Peek();
+		while (n >= '0' && n <= '9')
+		{
+			literal += n;
+			GetChar();
+			n = Peek();
+		}
+	}
+
+	if (isDecimal)
+	{
+		PushToken(TokenType::Real, std::stod(literal));
+	}
+	else
+	{
+		PushToken(TokenType::Integer, std::stoll(literal));
+	}
+}
+
+bool IsAlphanumeric(char c)
+{
+	return IsAlphabet(c) ||
+		(c >= '0' && c <= '9');
+}
+
+static std::map<std::string, TokenType> s_Reserved =
+{
+	{ "and", TokenType::And },
+	{ "or", TokenType::Or },
+	{ "if", TokenType::If },
+	{ "else", TokenType::Else },
+	{ "true", TokenType::True },
+	{ "false", TokenType::False },
+	{ "for", TokenType::For },
+	{ "while", TokenType::While },
+	{ "class", TokenType::Class },
+	{ "static", TokenType::Static },
+	{ "copy", TokenType::Copy },
+	{ "const", TokenType::Const },
+	{ "public", TokenType::Public },
+	{ "protected", TokenType::Protected },
+	{ "private", TokenType::Private },
+	{ "func", TokenType::Function },
+	{ "return", TokenType::Return },
+	{ "int", TokenType::IntegerType },
+	{ "real", TokenType::RealType },
+	{ "string", TokenType::StringType },
+	{ "bool", TokenType::BoolType },
+	{ "module", TokenType::Module },
+	{ "import", TokenType::Import },
+	{ "as", TokenType::As },
+	{ "export", TokenType::Export }
+};
+
+void Lexer::Identifier(char c)
+{
+	std::string literal;
+	literal += c;
+
+	char n = Peek();
+	while (IsAlphanumeric(n))
+	{
+		literal += n;
+		GetChar();
+		n = Peek();
+	}
+
+	if (s_Reserved.count(literal))
+	{
+		PushToken(s_Reserved[literal]);
+	}
+	else
+	{
+		PushToken(TokenType::Identifier, literal);
+	}
 }
 
 }

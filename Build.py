@@ -71,36 +71,36 @@ def Main():
     os.system("color")
 
     parser = argparse.ArgumentParser(
-        description="Generate Ninja build files for Wave, and build the compiler.",
-        epilog="If you wish to invoke CMake directly, go to the README."
+        description="Generate Ninja build files for Wave, and build the compiler",
+        epilog="If you wish to invoke CMake directly, go to the README"
     )
     
     parser.add_argument(
         "-c", "--conf",
         default="Release",
         choices=["Debug", "Development", "Release"],
-        help="Configuration to build, directly corresponds to Debug, RelWithDebInfo, and Release.",
+        help="configuration to build, directly corresponds to Debug, RelWithDebInfo, and Release",
         dest="config"
     )
     
     parser.add_argument(
         "-nosub", "--nosubmodule",
         action="store_false",
-        help="Disable updating submodules, only turn off if you have made changes to them.",
+        help="disable updating submodules, only turn off if you have made changes to them",
         dest="nosub"
     )
 
     parser.add_argument(
         "-nodoc", "--nodocumentation",
         action="store_false",
-        help="Do not build the Wave documentation.",
+        help="do not build the Wave documentation",
         dest="nodoc"
     )
 
     parser.add_argument(
         "-notest", 
         action="store_false",
-        help="Do not build the Wave testing suites.",
+        help="Do not build the Wave testing suites",
         dest="notest"
     )
     

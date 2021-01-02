@@ -17,6 +17,8 @@
 #include <filesystem>
 #include <vector>
 
+#include "WaveCompiler/CompileContext.h"
+
 namespace fs = std::filesystem;
 
 namespace Wave {
@@ -33,5 +35,7 @@ namespace Args {
 extern std::vector<fs::path> SourceFiles;
 
 }
+
+extern CompileContext Context;
 
 }

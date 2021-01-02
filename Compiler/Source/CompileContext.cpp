@@ -13,3 +13,12 @@
 // limitations under the License.
 
 #include "CompileContext.h"
+
+namespace Wave {
+
+void CompileContext::SetDebugOutput(bool on)
+{
+	m_DebugOutput = on;
+}
+
+}

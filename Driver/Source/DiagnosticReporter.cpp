@@ -43,8 +43,18 @@ DiagnosticReporter::DiagnosticReporter(const Diagnostic& diagnostic)
 {
 	// <filename>:<line>:<column>: 
 	m_Buf << diagnostic.Marker.File.filename().string() << ":";
-	m_Buf << diagnostic.Marker.Line << ":";
-	m_Buf << diagnostic.Marker.Column << ": ";
+
+	std::ifstream stream(diagnostic.Marker.File);
+
+	uint64_t line = 1, column = 1;
+	for (uint64_t i = 0; i < diagnostic.Marker.Pos; i++)
+	{
+		if (stream.get() == '\n') { line++; column = 1; continue; }
+		column++;
+	}
+
+	m_Buf << line << ":";
+	m_Buf << column << ": ";
 
 	// <severity>:
 	switch (diagnostic.Severity)
@@ -58,15 +68,15 @@ DiagnosticReporter::DiagnosticReporter(const Diagnostic& diagnostic)
 	// <message>
 	m_Buf << diagnostic.Message << "\n";
 
+	stream.seekg(0);
 	// Offending line, with offending part highlighted.
-	std::ifstream stream(diagnostic.Marker.File);
-	for (uint64_t i = 0; i < diagnostic.Marker.Line - 1; i++) 
+	for (uint64_t i = 0; i < line - 1; i++) 
 	{
 		stream.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 	}
 
 	// Characters before highlight
-	for (uint64_t i = 0; i < diagnostic.Marker.Column - 1; i++)
+	for (uint64_t i = 0; i < column - 1; i++)
 	{
 		char c;
 		stream.get(c);
@@ -88,8 +98,8 @@ DiagnosticReporter::DiagnosticReporter(const Diagnostic& diagnostic)
 
 void DiagnosticReporter::Dump()
 {
-	if (m_Severity != DiagnosticSeverity::Note) { std::cerr << m_Buf.str() << "\n"; }
-	else { std::cout << m_Buf.str() << "\n"; }
+	if (m_Severity != DiagnosticSeverity::Note) { std::cerr << m_Buf.str() << "\n\n"; }
+	else { std::cout << m_Buf.str() << "\n\n"; }
 
 	if (m_Severity == DiagnosticSeverity::Fatal) { exit(1); }
 }

@@ -27,6 +27,18 @@ public:
 
 	CompileContext(const CompileContext&) = delete;
 	CompileContext& operator=(const CompileContext&) = delete;
+
+	/// Set compile debug output.
+	/// Output will be printed to stdout.
+	void SetDebugOutput(bool on = false);
+
+	/// Check if debug output is enabled.
+	///
+	/// \return If debug ouput is enabled.
+	bool IsDebugOutputEnabled() { return m_DebugOutput; }
+
+private:
+	bool m_DebugOutput = false;
 };
 
 }

@@ -14,8 +14,7 @@
 
 #include <fstream>
 
-#include "WaveCompiler/CompileContext.h"
-#include "WaveCompiler/Lexer.h"
+#include "WaveCompiler/Parser.h"
 
 #include "ArgParse.h"
 #include "DiagnosticReporter.h"
@@ -26,19 +25,40 @@ int main(int argc, char** argv)
 {
 	ParseArguments(argc, argv);
 
-	auto context = CompileContext();
-
 	for (auto& file : Args::SourceFiles)
 	{
 		std::ifstream stream(file);
-		Lexer lexer(context, file, stream);
+		Lexer lexer(Context, file, stream);
 		lexer.Lex();
 
+		bool error = false;
 		for (auto& diag : lexer.GetDiagnostics())
 		{
+			if (diag.Severity == DiagnosticSeverity::Error || diag.Severity == DiagnosticSeverity::Fatal)
+			{
+				error = true;
+			}
+
 			DiagnosticReporter d(diag);
 			d.Dump();
 		}
+		if (error) { continue; }
+
+		Parser parser(lexer);
+		parser.Parse();
+
+		error = false;
+		for (auto& diag : parser.GetDiagnostics())
+		{
+			if (diag.Severity == DiagnosticSeverity::Error || diag.Severity == DiagnosticSeverity::Fatal)
+			{
+				error = true;
+			}
+
+			DiagnosticReporter d(diag);
+			d.Dump();
+		}
+		if (error) { continue; }
 	}
 
 	return 0;

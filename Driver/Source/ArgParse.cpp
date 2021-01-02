@@ -24,6 +24,10 @@ std::vector<fs::path> SourceFiles;
 
 }
 
+CompileContext Context;
+
+void OutputHelp();
+
 void ParseArguments(int argc, const char* const* argv)
 {
 	for (int i = 1; i < argc; i++)
@@ -36,19 +40,51 @@ void ParseArguments(int argc, const char* const* argv)
 			if (!fs::exists(path) || !fs::is_regular_file(path))
 			{
 				DiagnosticReporter diag("wavec", DiagnosticSeverity::Fatal);
-				diag << "source file does not exist: '" << path.string() << "'.";
+				diag << "source file does not exist: '" << path.string() << "'";
 				diag.Dump();
 			}
 
 			Args::SourceFiles.emplace_back(std::move(path));
 		}
-		else // No command line options are supported yet.
+		else
 		{
-			DiagnosticReporter diag("wavec", DiagnosticSeverity::Warning);
-			diag << "ignoring unknown option: '" << argv[i] << "'.";
-			diag.Dump();
+			if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0)
+			{
+				OutputHelp();
+				exit(0);
+			}
+			else if (strcmp(argv[i], "-showdebug") == 0)
+			{
+				Context.SetDebugOutput(true);
+			}
+			else
+			{
+				DiagnosticReporter diag("wavec", DiagnosticSeverity::Warning);
+				diag << "ignoring unknown option: '" << argv[i] << "'.";
+				diag.Dump();
+			}
 		}
 	}
+
+	if (argc == 1)
+	{
+		DiagnosticReporter diag("wavec", DiagnosticSeverity::Fatal);
+		diag << "no source files";
+		diag.Dump();
+	}
+}
+
+void OutputHelp()
+{
+	printf(
+R"(Wave compiler driver
+
+Usage: wavec [option/file] [option/file] ...
+
+Options:
+  -h, --help                       Show this help message, and exit
+)"
+	);
 }
 
 }
