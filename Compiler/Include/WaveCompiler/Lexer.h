@@ -53,6 +53,7 @@ enum class TokenType
 	If, Else,
 	True, False,
 	For, While,
+	Break, Continue,
 	Try, Catch, Throw,
 	Class, Construct, Abstract,
 	Static, Const, Copy,

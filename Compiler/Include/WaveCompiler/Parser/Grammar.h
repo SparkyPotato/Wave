@@ -134,6 +134,15 @@ struct BoolType : Type
 	virtual void Accept(ASTVisitor& visitor, std::any& context) override;
 };
 
+struct GenericType : Type 
+{
+	/// Accept a visitor.
+	///
+	/// \param visitor Visitor to accept.
+	/// \param context Context argument to pass on to visit.
+	virtual void Accept(ASTVisitor& visitor, std::any& context) override;
+};
+
 /// Type of function.
 struct FuncType : Type
 {
@@ -162,6 +171,7 @@ struct ClassType : Type
 /// A parameter of a function.
 struct Parameter
 {
+	bool IsConst = false;
 	Token Ident;
 	up<Type> DataType;
 };
@@ -191,6 +201,7 @@ struct Abstract : ClassFunc
 	Token Ident;
 	std::vector<Parameter> Params;
 	up<Type> ReturnType;
+	bool IsConst = false;
 
 	/// Accept a visitor.
 	///
@@ -257,7 +268,7 @@ struct Getter : ClassFunc
 struct Setter : ClassFunc
 {
 	Token Ident;
-	up<Type> SetType;
+	Parameter SetParam;
 	up<Block> ExecBlock;
 
 	/// Accept a visitor.
@@ -300,6 +311,18 @@ struct Expression
 	virtual void Accept(ASTVisitor& visitor, std::any& context) = 0;
 };
 
+struct ArrayType : Type
+{
+	up<Type> HoldType;
+	up<Expression> Size;
+
+	/// Accept a visitor.
+	///
+	/// \param visitor Visitor to accept.
+	/// \param context Context argument to pass on to visit.
+	virtual void Accept(ASTVisitor& visitor, std::any& context) override;
+};
+
 /// Type of an expression preceded by 'typeof'
 struct TypeOf : Type
 {
@@ -328,7 +351,6 @@ struct Return : Statement
 struct VarDefinition : Definition
 {
 	Token VarType;
-	Token Ident;
 	up<Type> DataType;
 	up<Expression> Value;
 
@@ -413,11 +435,41 @@ struct If : Statement
 	virtual void Accept(ASTVisitor& visitor, std::any& context) override;
 };
 
+struct Catch
+{
+	up<Block> ExecBlock;
+	Parameter Param;
+};
+
+struct Try : Statement
+{
+	up<Block> ExecBlock;
+	std::vector<Catch> Catches;
+
+	/// Accept a visitor.
+	///
+	/// \param visitor Visitor to accept.
+	/// \param context Context argument to pass on to visit.
+	virtual void Accept(ASTVisitor& visitor, std::any& context) override;
+};
+
+struct Throw : Statement
+{
+	up<Expression> Value;
+
+	/// Accept a visitor.
+	///
+	/// \param visitor Visitor to accept.
+	/// \param context Context argument to pass on to visit.
+	virtual void Accept(ASTVisitor& visitor, std::any& context) override;
+};
+
 /// A function, which could be anonymous.
 struct Function : Expression
 {
 	std::vector<Parameter> Params;
 	up<Type> ReturnType;
+	bool IsReturnConst = false;
 	up<Block> ExecBlock;
 
 	/// Accept a visitor.
@@ -444,6 +496,7 @@ struct FunctionDefinition : Definition
 struct Method : ClassFunc
 {
 	bool IsStatic = false;
+	bool IsConst = false;
 	up<FunctionDefinition> Def;
 
 	/// Accept a visitor.
@@ -549,6 +602,18 @@ struct Group : Expression
 struct VarAccess : Expression
 {
 	Identifier Var;
+	bool IsCopy = false;
+
+	/// Accept a visitor.
+	///
+	/// \param visitor Visitor to accept.
+	/// \param context Context argument to pass on to visit.
+	virtual void Accept(ASTVisitor& visitor, std::any& context) override;
+};
+
+struct ArrayIndex : VarAccess
+{
+	up<Expression> Index;
 
 	/// Accept a visitor.
 	///
@@ -569,6 +634,18 @@ public:
 	/// \param node Node to visit.
 	/// \param context Parameter passed to node.Visit().
 	virtual void Visit(Abstract& node, std::any& context) = 0;
+
+	/// Visit an AST Node.
+	///
+	/// \param node Node to visit.
+	/// \param context Parameter passed to node.Visit().
+	virtual void Visit(ArrayIndex& node, std::any& context) = 0;
+
+	/// Visit an AST Node.
+	///
+	/// \param node Node to visit.
+	/// \param context Parameter passed to node.Visit().
+	virtual void Visit(ArrayType& node, std::any& context) = 0;
 
 	/// Visit an AST Node.
 	///
@@ -670,6 +747,12 @@ public:
 	///
 	/// \param node Node to visit.
 	/// \param context Parameter passed to node.Visit().
+	virtual void Visit(GenericType& node, std::any& context) = 0;
+
+	/// Visit an AST Node.
+	///
+	/// \param node Node to visit.
+	/// \param context Parameter passed to node.Visit().
 	virtual void Visit(Getter& node, std::any& context) = 0;
 
 	/// Visit an AST Node.
@@ -731,6 +814,18 @@ public:
 	/// \param node Node to visit.
 	/// \param context Parameter passed to node.Visit().
 	virtual void Visit(StringType& node, std::any& context) = 0;
+
+	/// Visit an AST Node.
+	///
+	/// \param node Node to visit.
+	/// \param context Parameter passed to node.Visit().
+	virtual void Visit(Throw& node, std::any& context) = 0;
+
+	/// Visit an AST Node.
+	///
+	/// \param node Node to visit.
+	/// \param context Parameter passed to node.Visit().
+	virtual void Visit(Try& node, std::any& context) = 0;
 
 	/// Visit an AST Node.
 	///

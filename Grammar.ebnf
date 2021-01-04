@@ -7,24 +7,23 @@ globalDefinition = [ "export" ] definition;
 definition = funcDefinition | varDefinition | classDefinition;
 
 funcDefinition = "func", identifier, function;
-function = "(", [ parameters ] ")", [ ":", type ], block
+function = "(", [ parameters ] ")", [ ":", [ "const" ], type ], block
 parameters = parameter, { ",", parameter };
-parameter = [ "const" ], identifier, ":", type;
+parameter = identifier, [ ":", [ "const" ], type ];
 
-varDefinition = ( "var" | "const" | "static",
-	identifier, [ ":", type ], [ "=", expression, ] ";" )
+varDefinition = ( "const" | "static" | "var" ), identifier, [ ":", type ], [ "=", expression, ] ";";
 	
 classDefinition = "class", identifier, [ ":", subIdentifier, { ",", subIdentifier } ], 
 	"{", { [ ( "public" | "protected" | "private" ), ":" ], 
 	( varDefinition | classFunc ) }, "}", ";";
 	
-classFunc = construct | getter | setter | ( [ "static" ], funcDefinition )
-	| ( "abstract", identifier, "(", [ parameters ] ")", [ ":", type ], ";" );
+classFunc = construct | getter | setter | ( [ "static" | "const" ], funcDefinition )
+	| ( [ "const" ], "abstract", identifier, "(", [ parameters ] ")", [ ":", type ], ";" );
 construct = "construct", "(", [ parameters ], ")", block;
 getter = identifier, ":", type, block;
 setter = identifier, "(", parameter, ")", block;
 	
-type = "int" | "real" | "bool" | "string" | funcType | identifier | ( "typeof", expression );
+type = ( "int" | "real" | "bool" | "string" | funcType | identifier | ( "typeof", expression ) ), [ "[", expression, "]" ];
 funcType = "func", "(", [ types ] ")", [ ":", type ];
 types = type, { ",", type };
 
@@ -47,7 +46,7 @@ throw = "throw", expression;
 statement = ( expression, ";" ) | definition | while | for 
 	| return | break | continue | block | if | try | throw;
 
-expression = assignment | function;
+expression = assignment;
 
 assignment = ( subIdentifier, "=", assignment ) | or;
 or = and, { "or", and };
@@ -60,7 +59,7 @@ factor = unary, { ( "/" | "*" ), unary ) };
 unary = ( ( "!" | "-" ), unary ) | call;
 call = primary, { "(", [ arguments ], ")" };
 arguments = expression, { ",", expression };
-primary = int | real | string | bool | ( "(", expression, ")" ) | subIdentifier;
+primary = int | real | string | bool | function | ( "(", expression, ")" ) | ( [ copy ], subIdentifier, [ "[", expression, "]" ] );
 
 subIdentifier = identifier, { ".", identifier };
 identifier = ? lexer identifier token ?

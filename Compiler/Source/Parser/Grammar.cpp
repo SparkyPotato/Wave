@@ -176,7 +176,32 @@ void VarAccess::Accept(ASTVisitor& visitor, std::any& context)
 	visitor.Visit(*this, context);
 }
 
+void Try::Accept(ASTVisitor& visitor, std::any& context)
+{
+	visitor.Visit(*this, context);
+}
+
 void TypeOf::Accept(ASTVisitor& visitor, std::any& context)
+{
+	visitor.Visit(*this, context);
+}
+
+void Throw::Accept(ASTVisitor& visitor, std::any& context)
+{
+	visitor.Visit(*this, context);
+}
+
+void GenericType::Accept(ASTVisitor& visitor, std::any& context)
+{
+	visitor.Visit(*this, context);
+}
+
+void ArrayType::Accept(ASTVisitor& visitor, std::any& context)
+{
+	visitor.Visit(*this, context);
+}
+
+void ArrayIndex::Accept(ASTVisitor& visitor, std::any& context)
 {
 	visitor.Visit(*this, context);
 }

@@ -1,10 +1,36 @@
 module Tests.Test1;
 
-var a: func (int, func (string)): bool;
+import Standard.IO as _;
 
-var b = (a : int): int { return a * 2; }
-
-func main(): int
+class HelloWorld
 {
-	return b(3);
+public:
+	static func Print(output: const)
+	{
+		Print(output);
+		Print("\n");
+	}
+
+	static Func = (output: const)
+	{
+		Print(output);
+		Print("\n");
+	};
+
+	const abstract Thingy();
+};
+
+func main(args: string[])
+{
+	HelloWorld.Print("Hello, World!");
+	HelloWorld.Func("Hello, World!");
+
+	Print("The first argument is {}\n", args[0]);
+
+	if 5 > 3
+	{
+		Print("5 is greater than 3");
+	}
+
+	return 0;
 }

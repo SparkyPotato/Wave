@@ -81,6 +81,16 @@ private:
 	/// \return The class function.
 	up<ClassFunc> ParseClassFunc();
 
+	/// Parse a class method. Expects cursor to be at first token.
+	///
+	/// \return The method.
+	up<Method> ParseMethod();
+
+	/// Parse an abstract function. Expects cursor to be after abstract keyword.
+	///
+	/// \return The abstract function.
+	up<Abstract> ParseAbstract();
+
 	/// Parse a getter or a setter. Expects cursor to be at the identifier.
 	///
 	/// \return The getter or setter.
@@ -111,6 +121,61 @@ private:
 	/// \return The parsed expression.
 	up<Expression> ParseExpression();
 
+	/// Parse an assignment. Expects cursor to be at the first token of the expression.
+	///
+	/// \return The assignment.
+	up<Expression> ParseAssignment();
+
+	/// Parse a logical or expression. Expects cursor to be at the first token of the expression.
+	///
+	/// \return The expression.
+	up<Expression> ParseOr();
+
+	/// Parse a logical and expression. Expects cursor to be at the first token of the expression.
+	///
+	/// \return The expression.
+	up<Expression> ParseAnd();
+
+	/// Parse an equality expression. Expects cursor to be at the first token of the expression.
+	///
+	/// \return The expression.
+	up<Expression> ParseEquality();
+
+	/// Parse a comparison expression. Expects cursor to be at the first token of the expression.
+	///
+	/// \return The expression.
+	up<Expression> ParseComparision();
+
+	/// Parse a term expression. Expects cursor to be at the first token of the expression.
+	///
+	/// \return The expression.
+	up<Expression> ParseTerm();
+
+	/// Parse a factor expression. Expects cursor to be at the first token of the expression.
+	///
+	/// \return The expression.
+	up<Expression> ParseFactor();
+
+	/// Parse a unary expression. Expects cursor to be at the first token of the expression.
+	///
+	/// \return The expression.
+	up<Expression> ParseUnary();
+
+	/// Parse a call expression. Expects cursor to be at the first token of the expression.
+	///
+	/// \return The expression.
+	up<Expression> ParseCall();
+
+	/// Parse a primary expression. Expects cursor to be at the first token of the expression.
+	///
+	/// \return The expression.
+	up<Expression> ParsePrimary();
+
+	/// Check if the expression is a function.
+	///
+	/// \return If the function is a function.
+	bool IsFunction();
+
 	/// Parse an anonymous function. Expects cursor to be on the first token of the function.
 	///
 	/// \return Function parsed.
@@ -130,6 +195,31 @@ private:
 	///
 	/// \return The parsed statement.
 	up<Statement> ParseStatement();
+
+	/// Parse a while loop. Expects cursor to be after the while token.
+	///
+	/// \return The parsed loop.
+	up<While> ParseWhile();
+
+	/// Parse a for loop. Expects cursor to be after the for token.
+	///
+	/// \return The parsed loop.
+	up<For> ParseFor();
+
+	/// Parse an if statement. Expects cursor to be after the if token.
+	///
+	/// \return The parsed if.
+	up<If> ParseIf();
+
+	/// Parse a try-catch block. Expects cursor to be after the try token.
+	///
+	/// \return The parsed block.
+	up<Try> ParseTry();
+
+	/// Check if the expression is a definition
+	///
+	/// \return If the function is a definition.
+	bool IsDefinition();
 
 	/// Get token and advance cursor. Does no bounds-checking.
 	///

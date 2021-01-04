@@ -191,6 +191,8 @@ void Lexer::PrettyPrint()
 		case TokenType::False: std::cout << "false"; break;
 		case TokenType::For: std::cout << "for"; break;
 		case TokenType::While: std::cout << "while"; break;
+		case TokenType::Break: std::cout << "break"; break;
+		case TokenType::Continue: std::cout << "continue"; break;
 		case TokenType::Try: std::cout << "try"; break;
 		case TokenType::Catch: std::cout << "catch"; break;
 		case TokenType::Throw: std::cout << "throw"; break;
@@ -207,6 +209,7 @@ void Lexer::PrettyPrint()
 		case TokenType::Super: std::cout << "super"; break;
 		case TokenType::Function: std::cout << "func"; break;
 		case TokenType::Return: std::cout << "return"; break;
+		case TokenType::Variable: std::cout << "var"; break;
 		case TokenType::Type: std::cout << "type"; break;
 		case TokenType::TypeOf: std::cout << "typeof"; break;
 		case TokenType::IntegerType: std::cout << "int"; break;
@@ -217,6 +220,7 @@ void Lexer::PrettyPrint()
 		case TokenType::Import: std::cout << "import"; break;
 		case TokenType::As: std::cout << "as"; break;
 		case TokenType::Export: std::cout << "export"; break;
+		case TokenType::Null: break;
 		}
 
 		std::cout << "\n\n";
@@ -416,6 +420,8 @@ static std::map<std::string, TokenType> s_Reserved =
 	{ "false", TokenType::False },
 	{ "for", TokenType::For },
 	{ "while", TokenType::While },
+	{ "break", TokenType::Break },
+	{ "continue", TokenType::Continue },
 	{ "try", TokenType::Try },
 	{ "catch", TokenType::Catch },
 	{ "throw", TokenType::Throw },
