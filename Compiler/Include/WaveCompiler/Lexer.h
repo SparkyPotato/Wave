@@ -14,7 +14,9 @@
 
 #pragma once
 
+#include <any>
 #include <istream>
+#include <memory>
 #include <string>
 #include <variant>
 #include <vector>
@@ -24,6 +26,9 @@
 #include "Diagnostic.h"
 
 namespace Wave {
+
+template<typename T>
+using up = std::unique_ptr<T>;
 
 /// Type of a lexer token.
 enum class TokenType
@@ -48,17 +53,27 @@ enum class TokenType
 	If, Else,
 	True, False,
 	For, While,
-	Class, Interface, Abstract,
+	Try, Catch, Throw,
+	Class, Construct, Abstract,
 	Static, Const, Copy,
 	Public, Private, Protected,
+	Self, Super,
 	Function, Return,
+	Variable,
+	Type, TypeOf,
 	IntegerType, RealType, StringType, BoolType,
-	Module, Import, As, Export
+	Module, Import, As, Export,
+
+	Null
 };
 
 /// Lexer token.
 struct WAVEC_API Token
 {
+	Token()
+		: Marker(""), Type(TokenType::Null)
+	{}
+
 	/// Construct a token.
 	///
 	/// \param marker Marker of the token.

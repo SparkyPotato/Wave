@@ -1,3 +1,10 @@
-// Expression parser
+module Tests.Test1;
 
-6 *
+var a: func (int, func (string)): bool;
+
+var b = (a : int): int { return a * 2; }
+
+func main(): int
+{
+	return b(3);
+}

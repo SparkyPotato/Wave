@@ -141,6 +141,8 @@ void Lexer::Lex()
 		}
 	}
 
+	PushToken(TokenType::Null);
+
 	if (m_Context.IsDebugOutputEnabled()) 
 	{
 		std::cout << "LEXER OUTPUT: \n\n";
@@ -189,17 +191,24 @@ void Lexer::PrettyPrint()
 		case TokenType::False: std::cout << "false"; break;
 		case TokenType::For: std::cout << "for"; break;
 		case TokenType::While: std::cout << "while"; break;
+		case TokenType::Try: std::cout << "try"; break;
+		case TokenType::Catch: std::cout << "catch"; break;
+		case TokenType::Throw: std::cout << "throw"; break;
 		case TokenType::Class: std::cout << "class"; break;
-		case TokenType::Interface: std::cout << "interface"; break;
+		case TokenType::Construct: std::cout << "construct"; break;
 		case TokenType::Abstract: std::cout << "abstract"; break;
 		case TokenType::Static: std::cout << "static"; break;
 		case TokenType::Copy: std::cout << "copy"; break;
 		case TokenType::Const: std::cout << "const"; break;
 		case TokenType::Public: std::cout << "public"; break;
-		case TokenType::Private: std::cout << "private"; break;
 		case TokenType::Protected: std::cout << "protected"; break;
+		case TokenType::Private: std::cout << "private"; break;
+		case TokenType::Self: std::cout << "self"; break;
+		case TokenType::Super: std::cout << "super"; break;
 		case TokenType::Function: std::cout << "func"; break;
 		case TokenType::Return: std::cout << "return"; break;
+		case TokenType::Type: std::cout << "type"; break;
+		case TokenType::TypeOf: std::cout << "typeof"; break;
 		case TokenType::IntegerType: std::cout << "int"; break;
 		case TokenType::RealType: std::cout << "real"; break;
 		case TokenType::StringType: std::cout << "string"; break;
@@ -407,8 +416,11 @@ static std::map<std::string, TokenType> s_Reserved =
 	{ "false", TokenType::False },
 	{ "for", TokenType::For },
 	{ "while", TokenType::While },
+	{ "try", TokenType::Try },
+	{ "catch", TokenType::Catch },
+	{ "throw", TokenType::Throw },
 	{ "class", TokenType::Class },
-	{ "interface", TokenType::Interface },
+	{ "construct", TokenType::Construct },
 	{ "abstract", TokenType::Abstract },
 	{ "static", TokenType::Static },
 	{ "copy", TokenType::Copy },
@@ -416,8 +428,13 @@ static std::map<std::string, TokenType> s_Reserved =
 	{ "public", TokenType::Public },
 	{ "protected", TokenType::Protected },
 	{ "private", TokenType::Private },
+	{ "self", TokenType::Self },
+	{ "super", TokenType::Super },
 	{ "func", TokenType::Function },
 	{ "return", TokenType::Return },
+	{ "var", TokenType::Variable },
+	{ "type", TokenType::Type },
+	{ "typeof", TokenType::TypeOf },
 	{ "int", TokenType::IntegerType },
 	{ "real", TokenType::RealType },
 	{ "string", TokenType::StringType },

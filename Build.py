@@ -35,11 +35,11 @@ def GenerateFiles(args):
 
     # Turn documentation building off
     if args.nodoc:
-        options += "-DBUILD_DOCS=OFF "
+        options += "-DWAVE_BUILD_DOCS=OFF "
 
     # Turn tests off
     if args.notest:
-        options += "-DBUILD_TESTS=OFF "
+        options += "-DWAVE_BUILD_TESTS=OFF "
     
     # Generate CMake files
     value = subprocess.call(

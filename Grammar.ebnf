@@ -1,11 +1,69 @@
-expression = equality;
+module = moduleDefinition, { moduleImport }, { globalDefinition };
+
+moduleDefinition = "module", subIdentifier, ";";
+moduleImport = "import", subIdentifier, [ "as", subIdentifier ], ";";
+
+globalDefinition = [ "export" ] definition;
+definition = funcDefinition | varDefinition | classDefinition;
+
+funcDefinition = "func", identifier, function;
+function = "(", [ parameters ] ")", [ ":", type ], block
+parameters = parameter, { ",", parameter };
+parameter = [ "const" ], identifier, ":", type;
+
+varDefinition = ( "var" | "const" | "static",
+	identifier, [ ":", type ], [ "=", expression, ] ";" )
+	
+classDefinition = "class", identifier, [ ":", subIdentifier, { ",", subIdentifier } ], 
+	"{", { [ ( "public" | "protected" | "private" ), ":" ], 
+	( varDefinition | classFunc ) }, "}", ";";
+	
+classFunc = construct | getter | setter | ( [ "static" ], funcDefinition )
+	| ( "abstract", identifier, "(", [ parameters ] ")", [ ":", type ], ";" );
+construct = "construct", "(", [ parameters ], ")", block;
+getter = identifier, ":", type, block;
+setter = identifier, "(", parameter, ")", block;
+	
+type = "int" | "real" | "bool" | "string" | funcType | identifier | ( "typeof", expression );
+funcType = "func", "(", [ types ] ")", [ ":", type ];
+types = type, { ",", type };
+
+block = "{", { statement }, "}";
+
+return = "return", [ expression ], ";";
+break = "break;";
+continue = "continue;";
+
+if = "if", expression, block,
+	{ "else if", expression, block },
+	[ "else", block ]
+
+while = "while", expression, block;
+for = "for", [ expression | definition ], ";", [ expression ], ";", [ expression ], block;
+
+try = "try", block, { "catch", param, block }-;
+throw = "throw", expression;
+
+statement = ( expression, ";" ) | definition | while | for 
+	| return | break | continue | block | if | try | throw;
+
+expression = assignment | function;
+
+assignment = ( subIdentifier, "=", assignment ) | or;
+or = and, { "or", and };
+and = equality, { "and", equality };
 equality = comparison, { ( "!=" | "==" ), comparison };
 comparison = term, { ( ">" | ">=" | "<" | "<=" ), term ) };
 term = factor, { ( "-" | "+" ), factor ) };
 factor = unary, { ( "/" | "*" ), unary ) };
-unary = ( ( "!" | "-" ), unary ) | primary ;
-primary = int | real | string | bool | ( "(", expression, ")" );
 
+unary = ( ( "!" | "-" ), unary ) | call;
+call = primary, { "(", [ arguments ], ")" };
+arguments = expression, { ",", expression };
+primary = int | real | string | bool | ( "(", expression, ")" ) | subIdentifier;
+
+subIdentifier = identifier, { ".", identifier };
+identifier = ? lexer identifier token ?
 int = ? lexer integer literal ?;
 real = ? lexer real literal ?;
 string = ? lexer string literal ?;
