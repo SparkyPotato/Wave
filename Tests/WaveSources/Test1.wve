@@ -1,6 +1,7 @@
 module Tests.Test1;
 
 import Standard.IO as _;
+import extern "stdio.h";
 
 class HelloWorld
 {
@@ -20,7 +21,7 @@ public:
 	const abstract Thingy();
 };
 
-func main(args: string[])
+func main(args: char[][])
 {
 	HelloWorld.Print("Hello, World!");
 	HelloWorld.Func("Hello, World!");

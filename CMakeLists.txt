@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.12)
 
 project (Wave LANGUAGES CXX)
 
+cmake_policy(SET CMP0079 NEW)
+
 find_package(Git QUIET)
 if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
 	option(SUBMODULE "Check submodules during build" ON)
@@ -29,8 +31,4 @@ add_subdirectory(Driver)
 
 if (WAVE_BUILD_DOCS)
 	add_subdirectory(Docs)
-endif ()
-
-if (WAVE_BUILD_TESTS)
-	add_subdirectory(Tests)
 endif ()

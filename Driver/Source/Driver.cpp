@@ -44,7 +44,7 @@ int main(int argc, char** argv)
 		}
 		if (error) { continue; }
 
-		Parser parser(lexer);
+		Parser parser(Context, lexer);
 		parser.Parse();
 
 		error = false;

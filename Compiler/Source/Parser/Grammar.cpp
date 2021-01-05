@@ -26,7 +26,7 @@ void RealType::Accept(ASTVisitor& visitor, std::any& context)
 	visitor.Visit(*this, context);
 }
 
-void StringType::Accept(ASTVisitor& visitor, std::any& context)
+void CharType::Accept(ASTVisitor& visitor, std::any& context)
 {
 	visitor.Visit(*this, context);
 }

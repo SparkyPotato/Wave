@@ -25,7 +25,7 @@ public:
 	/// Construct a parser.
 	///
 	/// \param lexer Lexer which has run.
-	Parser(const Lexer& lexer);
+	Parser(CompileContext& context, const Lexer& lexer);
 
 	/// Parse to form an AST.
 	void Parse();
@@ -35,6 +35,12 @@ public:
 	/// \return std::vector of diagnostics.
 	const std::vector<Diagnostic>& GetDiagnostics();
 
+	/// Get the parsed module.
+	///
+	/// \return Pointer to the module, which is owned by the Parser.
+	/// DO NOT delete.
+	Module* GetModule() { return m_Module.get(); }
+
 private:
 	/// Parse Identifier. Expects cursor to be at the first token of the identifier.
 	///
@@ -42,9 +48,7 @@ private:
 	Identifier ParseIdentifier();
 
 	/// Parse module import. Expects cursor to be after the import keyword.
-	///
-	/// \return The module import.
-	ModuleImport ParseImport();
+	void ParseImport();
 
 	/// Parse global definition. Expects cursor to be at first token of definition.
 	///
@@ -259,10 +263,11 @@ private:
 	/// \throw int if the check fails.
 	const Token& Ensure(TokenType type, const std::string& message);
 
+	CompileContext& m_Context;
+	up<Module> m_Module;
 	const std::vector<Token>& m_Tokens;
 	uint64_t m_Tok = 0;
 	std::vector<Diagnostic> m_Diagnostics;
-	up<Module> m_Module;
 };
 
 }

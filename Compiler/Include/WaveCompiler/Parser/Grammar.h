@@ -35,6 +35,12 @@ struct ModuleImport
 	Identifier As;
 };
 
+struct CImport
+{
+	/// Imported C file.
+	std::filesystem::path Path;
+};
+
 class ASTVisitor;
 
 /// A statement.
@@ -55,6 +61,12 @@ struct Definition : Statement
 {
 	/// Local identifier of the definition.
 	Token Ident;
+
+	/// Accept a visitor.
+	///
+	/// \param visitor Visitor to accept.
+	/// \param context Context argument to pass on to visit.
+	virtual void Accept(ASTVisitor& visitor, std::any& context) = 0;
 };
 
 /// A global definition in a module.
@@ -77,8 +89,14 @@ struct Module
 	/// List of all imports.
 	std::vector<ModuleImport> Imports;
 
+	/// List of all C imports.
+	std::vector<CImport> CImports;
+
 	/// List of all global definitions.
 	std::vector<GlobalDefinition> Definitions;
+
+	/// Path of the module file.
+	std::filesystem::path FilePath;
 };
 
 /// A data type.
@@ -115,7 +133,7 @@ struct RealType : Type
 };
 
 /// Type of string.
-struct StringType : Type
+struct CharType : Type
 {
 	/// Accept a visitor.
 	///
@@ -192,7 +210,11 @@ struct ClassComponent
 /// Class function.
 struct ClassFunc : ClassComponent
 {
-	
+	/// Accept a visitor.
+	///
+	/// \param visitor Visitor to accept.
+	/// \param context Context argument to pass on to visit.
+	virtual void Accept(ASTVisitor& visitor, std::any& context) = 0;
 };
 
 /// An abstract method in a class.
@@ -813,7 +835,7 @@ public:
 	///
 	/// \param node Node to visit.
 	/// \param context Parameter passed to node.Visit().
-	virtual void Visit(StringType& node, std::any& context) = 0;
+	virtual void Visit(CharType& node, std::any& context) = 0;
 
 	/// Visit an AST Node.
 	///

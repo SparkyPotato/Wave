@@ -14,6 +14,8 @@
 
 #pragma once
 
+#pragma warning(disable: 4251)
+
 #include <filesystem>
 #include <fstream>
 #include <string>

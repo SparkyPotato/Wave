@@ -14,11 +14,18 @@
 
 #include "Parser/Parser.h"
 
+#include <iostream>
+
+#include "Passes/TreePrint.h"
+
 namespace Wave {
 
-Parser::Parser(const Lexer& lexer)
-	: m_Tokens(lexer.GetTokens())
-{}
+Parser::Parser(CompileContext& context, const Lexer& lexer)
+	: m_Context(context), m_Tokens(lexer.GetTokens())
+{
+	m_Module = std::make_unique<Module>();
+	m_Module->FilePath = lexer.GetPath();
+}
 
 void Parser::Parse()
 {
@@ -32,8 +39,6 @@ void Parser::Parse()
 		return;
 	}
 
-	m_Module = std::make_unique<Module>();
-
 	try
 	{
 		// Module definitions.
@@ -43,7 +48,7 @@ void Parser::Parse()
 
 		while (Check(TokenType::Import))
 		{
-			m_Module->Imports.emplace_back(ParseImport());
+			ParseImport();
 		}
 
 		while (IsGood())
@@ -52,6 +57,14 @@ void Parser::Parse()
 		}
 	}
 	catch (...) {}
+
+	if (m_Context.IsDebugOutputEnabled())
+	{
+		std::cout << "PARSER OUTPUT: \n\n";
+
+		TreePrinter printer(GetModule());
+		printer.Print();
+	}
 }
 
 const std::vector<Wave::Diagnostic>& Parser::GetDiagnostics()
@@ -70,22 +83,31 @@ Identifier Parser::ParseIdentifier()
 	return ident;
 }
 
-ModuleImport Parser::ParseImport()
+void Parser::ParseImport()
 {
-	ModuleImport import;
-	import.Imported = ParseIdentifier();
-
-	if (Check(TokenType::As))
+	if (!Check(TokenType::Extern))
 	{
-		import.As = ParseIdentifier();
+		ModuleImport import;
+		import.Imported = ParseIdentifier();
+		if (Check(TokenType::As))
+		{
+			import.As = ParseIdentifier();
+		}
+		else
+		{
+			import.As = import.Imported;
+		}
+		m_Module->Imports.emplace_back(import);
 	}
 	else
 	{
-		import.As = import.Imported;
+		auto& str = Ensure(TokenType::String, "expected string");
+		CImport imp;
+		imp.Path = std::get<std::string>(str.Value);
+		m_Module->CImports.emplace_back(imp);
 	}
 
 	Ensure(TokenType::Semicolon, "expected semicolon ';'");
-	return import;
 }
 
 GlobalDefinition Parser::ParseGlobalDefinition()
@@ -363,7 +385,7 @@ up<Type> Parser::ParseType()
 	{
 	case TokenType::IntegerType: type = std::make_unique<IntType>(); break;
 	case TokenType::RealType: type = std::make_unique<RealType>(); break;
-	case TokenType::StringType: type = std::make_unique<StringType>(); break;
+	case TokenType::CharType: type = std::make_unique<CharType>(); break;
 	case TokenType::BoolType: type = std::make_unique<BoolType>(); break;
 	case TokenType::Function: type = ParseFuncType(); break;
 	case TokenType::TypeOf: type = ParseTypeOf(); break;
@@ -384,7 +406,7 @@ up<Type> Parser::ParseType()
 		throw -1;
 	}
 
-	if (Check(TokenType::LeftIndex))
+	while (Check(TokenType::LeftIndex))
 	{
 		auto arr = std::make_unique<ArrayType>();
 		
@@ -395,7 +417,7 @@ up<Type> Parser::ParseType()
 		}
 
 		arr->HoldType = std::move(type);
-		return arr;
+		type = std::move(arr);
 	}
 
 	return type;
@@ -693,7 +715,9 @@ up<Expression> Parser::ParsePrimary()
 		{
 			auto expr = ParseExpression();
 			Ensure(TokenType::RightParenthesis, "expected closing parenthesis ')'");
-			return expr;
+			auto group = std::make_unique<Group>();
+			group->Expr = std::move(expr);
+			return group;
 		}
 	}
 
@@ -771,49 +795,55 @@ up<Block> Parser::ParseBlock()
 
 up<Statement> Parser::ParseStatement()
 {
-	if (IsDefinition()) { return ParseDefinition(); }
-	else if (Check(TokenType::While)) { return ParseWhile(); }
-	else if (Check(TokenType::For)) { return ParseFor(); }
-	else if (Check(TokenType::Return)) 
+	try
 	{
-		auto ret = std::make_unique<Return>();
-		if (!Check(TokenType::Semicolon)) 
-		{ 
-			ret->Value = ParseExpression(); 
+		if (IsDefinition()) { return ParseDefinition(); }
+		else if (Check(TokenType::While)) { return ParseWhile(); }
+		else if (Check(TokenType::For)) { return ParseFor(); }
+		else if (Check(TokenType::Return))
+		{
+			auto ret = std::make_unique<Return>();
+			if (!Check(TokenType::Semicolon))
+			{
+				ret->Value = ParseExpression();
+				Ensure(TokenType::Semicolon, "expected semicolon ';'");
+			}
+			return ret;
+		}
+		else if (Check(TokenType::Break))
+		{
+			return std::make_unique<Break>();
 			Ensure(TokenType::Semicolon, "expected semicolon ';'");
 		}
-		return ret;
-	}
-	else if (Check(TokenType::Break)) 
-	{ 
-		return std::make_unique<Break>();
-		Ensure(TokenType::Semicolon, "expected semicolon ';'");
-	}
-	else if (Check(TokenType::Continue)) 
-	{ 
-		return std::make_unique<Continue>();
-		Ensure(TokenType::Semicolon, "expected semicolon ';'");
-	}
-	else if (Check(TokenType::LeftBrace)) { m_Tok--; return ParseBlock(); }
-	else if (Check(TokenType::If)) { return ParseIf(); }
-	else if (Check(TokenType::Try)) { return ParseTry(); }
-	else if (Check(TokenType::Throw)) 
-	{
-		auto thr = std::make_unique<Throw>();
-		if (!Check(TokenType::Semicolon)) 
-		{ 
-			thr->Value = ParseExpression(); 
+		else if (Check(TokenType::Continue))
+		{
+			return std::make_unique<Continue>();
 			Ensure(TokenType::Semicolon, "expected semicolon ';'");
 		}
-		return thr;
+		else if (Check(TokenType::LeftBrace)) { m_Tok--; return ParseBlock(); }
+		else if (Check(TokenType::If)) { return ParseIf(); }
+		else if (Check(TokenType::Try)) { return ParseTry(); }
+		else if (Check(TokenType::Throw))
+		{
+			auto thr = std::make_unique<Throw>();
+			if (!Check(TokenType::Semicolon))
+			{
+				thr->Value = ParseExpression();
+				Ensure(TokenType::Semicolon, "expected semicolon ';'");
+			}
+			return thr;
+		}
+		else
+		{
+			auto expr = std::make_unique<ExpressionStatement>();
+			expr->Expr = ParseExpression();
+			Ensure(TokenType::Semicolon, "expected semicolon ';'");
+			return expr;
+		}
 	}
-	else
-	{
-		auto expr = std::make_unique<ExpressionStatement>();
-		expr->Expr = ParseExpression();
-		Ensure(TokenType::Semicolon, "expected semicolon ';'");
-		return expr;
-	}
+	catch (...) {}
+
+	return std::make_unique<ExpressionStatement>();
 }
 
 
@@ -828,13 +858,27 @@ up<While> Parser::ParseWhile()
 up<For> Parser::ParseFor()
 {
 	auto loop = std::make_unique<For>();
-	if (IsDefinition()) { loop->Initializer = ParseDefinition(); }
-	else { loop->Initializer = ParseExpression(); }
-	Ensure(TokenType::Semicolon, "expected semicolon ';'");
-	loop->Condition = ParseExpression();
-	Ensure(TokenType::Semicolon, "expected semicolon ';'");
-	loop->Increment = ParseExpression();
+	if (!Check(TokenType::Semicolon))
+	{
+		if (IsDefinition()) { loop->Initializer = ParseDefinition(); }
+		else { loop->Initializer = ParseExpression(); }
+		Ensure(TokenType::Semicolon, "expected semicolon ';'");
+	}
+	
+	if (!Check(TokenType::Semicolon))
+	{
+		loop->Condition = ParseExpression();
+		Ensure(TokenType::Semicolon, "expected semicolon ';'");
+	}
+	
+	if (!Check(TokenType::LeftBrace))
+	{
+		loop->Increment = ParseExpression();
+	}
+	m_Tok--;
+
 	loop->ExecBlock = ParseBlock();
+
 	return loop;
 }
 
@@ -866,9 +910,7 @@ up<Try> Parser::ParseTry()
 	while (Check(TokenType::Catch))
 	{
 		auto& catchh = tryy->Catches.emplace_back();
-		Ensure(TokenType::LeftParenthesis, "expected, opening parenthesis '('");
 		catchh.Param = ParseParam();
-		Ensure(TokenType::RightParenthesis, "expected, opening parenthesis ')'");
 		catchh.ExecBlock = ParseBlock();
 	}
 

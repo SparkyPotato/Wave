@@ -104,7 +104,7 @@ void Lexer::Lex()
 			break;
 		// Literals
 		case '"': StringLiteral(); break;
-		// Numberssss
+		// Numbers
 		case '0':
 		case '1':
 		case '2':
@@ -155,75 +155,81 @@ void Lexer::PrettyPrint()
 	for (auto& token : m_Tokens)
 	{
 		std::cout << "Pos: " << token.Marker.Pos << ", Length: " << token.Marker.Length << "\n";
-		switch (token.Type)
-		{
-		case TokenType::LeftParenthesis: std::cout << "("; break;
-		case TokenType::RightParenthesis: std::cout << ")"; break;
-		case TokenType::LeftBrace: std::cout << "{"; break;
-		case TokenType::RightBrace: std::cout << "}"; break;
-		case TokenType::LeftIndex: std::cout << "["; break;
-		case TokenType::RightIndex: std::cout << "]"; break;
-		case TokenType::Comma: std::cout << ","; break;
-		case TokenType::Period: std::cout << "."; break;
-		case TokenType::Minus: std::cout << "-"; break;
-		case TokenType::Plus: std::cout << "+"; break;
-		case TokenType::Colon: std::cout << ":"; break;
-		case TokenType::Semicolon: std::cout << ";"; break;
-		case TokenType::Slash: std::cout << "/"; break;
-		case TokenType::Star: std::cout << "*"; break;
-		case TokenType::Not: std::cout << "!"; break;
-		case TokenType::NotEqual: std::cout << "!="; break;
-		case TokenType::Equal: std::cout << "="; break;
-		case TokenType::EqualEqual: std::cout << "=="; break;
-		case TokenType::Greater: std::cout << ">"; break;
-		case TokenType::GreaterEqual: std::cout << ">="; break;
-		case TokenType::Lesser: std::cout << "<"; break;
-		case TokenType::LesserEqual: std::cout << "<="; break;
-		case TokenType::Identifier: std::cout << "Identifier: "; std::visit([](auto& val) { std::cout << val; }, token.Value); break;
-		case TokenType::String: std::cout << "String: "; std::visit([](auto& val) { std::cout << val; }, token.Value); break;
-		case TokenType::Integer: std::cout << "Integer: "; std::visit([](auto& val) { std::cout << val; }, token.Value); break;
-		case TokenType::Real: std::cout << "Real: "; std::visit([](auto& val) { std::cout << val; }, token.Value); break;
-		case TokenType::And: std::cout << "and"; break;
-		case TokenType::Or: std::cout << "or"; break;
-		case TokenType::If: std::cout << "if"; break;
-		case TokenType::Else: std::cout << "else"; break;
-		case TokenType::True: std::cout << "true"; break;
-		case TokenType::False: std::cout << "false"; break;
-		case TokenType::For: std::cout << "for"; break;
-		case TokenType::While: std::cout << "while"; break;
-		case TokenType::Break: std::cout << "break"; break;
-		case TokenType::Continue: std::cout << "continue"; break;
-		case TokenType::Try: std::cout << "try"; break;
-		case TokenType::Catch: std::cout << "catch"; break;
-		case TokenType::Throw: std::cout << "throw"; break;
-		case TokenType::Class: std::cout << "class"; break;
-		case TokenType::Construct: std::cout << "construct"; break;
-		case TokenType::Abstract: std::cout << "abstract"; break;
-		case TokenType::Static: std::cout << "static"; break;
-		case TokenType::Copy: std::cout << "copy"; break;
-		case TokenType::Const: std::cout << "const"; break;
-		case TokenType::Public: std::cout << "public"; break;
-		case TokenType::Protected: std::cout << "protected"; break;
-		case TokenType::Private: std::cout << "private"; break;
-		case TokenType::Self: std::cout << "self"; break;
-		case TokenType::Super: std::cout << "super"; break;
-		case TokenType::Function: std::cout << "func"; break;
-		case TokenType::Return: std::cout << "return"; break;
-		case TokenType::Variable: std::cout << "var"; break;
-		case TokenType::Type: std::cout << "type"; break;
-		case TokenType::TypeOf: std::cout << "typeof"; break;
-		case TokenType::IntegerType: std::cout << "int"; break;
-		case TokenType::RealType: std::cout << "real"; break;
-		case TokenType::StringType: std::cout << "string"; break;
-		case TokenType::BoolType: std::cout << "bool"; break;
-		case TokenType::Module: std::cout << "module"; break;
-		case TokenType::Import: std::cout << "import"; break;
-		case TokenType::As: std::cout << "as"; break;
-		case TokenType::Export: std::cout << "export"; break;
-		case TokenType::Null: break;
-		}
+		PrettyPrint(token);
 
 		std::cout << "\n\n";
+	}
+}
+
+void Lexer::PrettyPrint(const Token& token)
+{
+	switch (token.Type)
+	{
+	case TokenType::LeftParenthesis: std::cout << "("; break;
+	case TokenType::RightParenthesis: std::cout << ")"; break;
+	case TokenType::LeftBrace: std::cout << "{"; break;
+	case TokenType::RightBrace: std::cout << "}"; break;
+	case TokenType::LeftIndex: std::cout << "["; break;
+	case TokenType::RightIndex: std::cout << "]"; break;
+	case TokenType::Comma: std::cout << ","; break;
+	case TokenType::Period: std::cout << "."; break;
+	case TokenType::Minus: std::cout << "-"; break;
+	case TokenType::Plus: std::cout << "+"; break;
+	case TokenType::Colon: std::cout << ":"; break;
+	case TokenType::Semicolon: std::cout << ";"; break;
+	case TokenType::Slash: std::cout << "/"; break;
+	case TokenType::Star: std::cout << "*"; break;
+	case TokenType::Not: std::cout << "!"; break;
+	case TokenType::NotEqual: std::cout << "!="; break;
+	case TokenType::Equal: std::cout << "="; break;
+	case TokenType::EqualEqual: std::cout << "=="; break;
+	case TokenType::Greater: std::cout << ">"; break;
+	case TokenType::GreaterEqual: std::cout << ">="; break;
+	case TokenType::Lesser: std::cout << "<"; break;
+	case TokenType::LesserEqual: std::cout << "<="; break;
+	case TokenType::Identifier: std::visit([](auto& val) { std::cout << val; }, token.Value); break;
+	case TokenType::String: std::visit([](auto& val) { std::cout << val; }, token.Value); break;
+	case TokenType::Integer: std::visit([](auto& val) { std::cout << val; }, token.Value); break;
+	case TokenType::Real: std::visit([](auto& val) { std::cout << val; }, token.Value); break;
+	case TokenType::And: std::cout << "and"; break;
+	case TokenType::Or: std::cout << "or"; break;
+	case TokenType::If: std::cout << "if"; break;
+	case TokenType::Else: std::cout << "else"; break;
+	case TokenType::True: std::cout << "true"; break;
+	case TokenType::False: std::cout << "false"; break;
+	case TokenType::For: std::cout << "for"; break;
+	case TokenType::While: std::cout << "while"; break;
+	case TokenType::Break: std::cout << "break"; break;
+	case TokenType::Continue: std::cout << "continue"; break;
+	case TokenType::Try: std::cout << "try"; break;
+	case TokenType::Catch: std::cout << "catch"; break;
+	case TokenType::Throw: std::cout << "throw"; break;
+	case TokenType::Class: std::cout << "class"; break;
+	case TokenType::Construct: std::cout << "construct"; break;
+	case TokenType::Abstract: std::cout << "abstract"; break;
+	case TokenType::Static: std::cout << "static"; break;
+	case TokenType::Copy: std::cout << "copy"; break;
+	case TokenType::Const: std::cout << "const"; break;
+	case TokenType::Public: std::cout << "public"; break;
+	case TokenType::Protected: std::cout << "protected"; break;
+	case TokenType::Private: std::cout << "private"; break;
+	case TokenType::Self: std::cout << "self"; break;
+	case TokenType::Super: std::cout << "super"; break;
+	case TokenType::Function: std::cout << "func"; break;
+	case TokenType::Return: std::cout << "return"; break;
+	case TokenType::Variable: std::cout << "var"; break;
+	case TokenType::Type: std::cout << "type"; break;
+	case TokenType::TypeOf: std::cout << "typeof"; break;
+	case TokenType::IntegerType: std::cout << "int"; break;
+	case TokenType::RealType: std::cout << "real"; break;
+	case TokenType::CharType: std::cout << "char"; break;
+	case TokenType::BoolType: std::cout << "bool"; break;
+	case TokenType::Module: std::cout << "module"; break;
+	case TokenType::Import: std::cout << "import"; break;
+	case TokenType::Extern: std::cout << "extern"; break;
+	case TokenType::As: std::cout << "as"; break;
+	case TokenType::Export: std::cout << "export"; break;
+	case TokenType::Null: break;
 	}
 }
 
@@ -332,7 +338,7 @@ void Lexer::StringLiteral()
 	std::string value;
 
 	// Unescaping other stuff now
-	for (uint64_t i = 0; i < source.size() - 1; i++)
+	for (uint64_t i = 0; i < source.size(); i++)
 	{
 		if (source[i] == '\\')
 		{
@@ -443,10 +449,11 @@ static std::map<std::string, TokenType> s_Reserved =
 	{ "typeof", TokenType::TypeOf },
 	{ "int", TokenType::IntegerType },
 	{ "real", TokenType::RealType },
-	{ "string", TokenType::StringType },
+	{ "char", TokenType::CharType },
 	{ "bool", TokenType::BoolType },
 	{ "module", TokenType::Module },
 	{ "import", TokenType::Import },
+	{ "extern", TokenType::Extern },
 	{ "as", TokenType::As },
 	{ "export", TokenType::Export }
 };

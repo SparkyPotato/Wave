@@ -62,8 +62,8 @@ enum class TokenType
 	Function, Return,
 	Variable,
 	Type, TypeOf,
-	IntegerType, RealType, StringType, BoolType,
-	Module, Import, As, Export,
+	IntegerType, RealType, CharType, BoolType,
+	Module, Import, Extern, As, Export,
 
 	Null
 };
@@ -118,6 +118,14 @@ public:
 
 	/// Print out all tokens to standard output.
 	void PrettyPrint();
+
+	/// PrettyPrint a specific token.
+	static void PrettyPrint(const Token& token);
+
+	/// Get the path of the module file.
+	///
+	/// \return The path.
+	const std::filesystem::path& GetPath() const { return m_Marker.File; };
 
 	/// Get the diagnostics from lexical analysis.
 	///

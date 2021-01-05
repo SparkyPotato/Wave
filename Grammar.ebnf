@@ -1,7 +1,7 @@
 module = moduleDefinition, { moduleImport }, { globalDefinition };
 
 moduleDefinition = "module", subIdentifier, ";";
-moduleImport = "import", subIdentifier, [ "as", subIdentifier ], ";";
+moduleImport = "import", ( subIdentifier, [ "as", subIdentifier ] ) | ( "extern", string ), ";";
 
 globalDefinition = [ "export" ] definition;
 definition = funcDefinition | varDefinition | classDefinition;
@@ -23,7 +23,7 @@ construct = "construct", "(", [ parameters ], ")", block;
 getter = identifier, ":", type, block;
 setter = identifier, "(", parameter, ")", block;
 	
-type = ( "int" | "real" | "bool" | "string" | funcType | identifier | ( "typeof", expression ) ), [ "[", expression, "]" ];
+type = ( "int" | "real" | "bool" | "char" | funcType | identifier | ( "typeof", expression ) ), [ "[", expression, "]" ];
 funcType = "func", "(", [ types ] ")", [ ":", type ];
 types = type, { ",", type };
 
