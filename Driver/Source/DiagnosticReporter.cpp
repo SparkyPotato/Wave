@@ -22,6 +22,7 @@ constexpr const char* EscapeEnd = "\033[0m";
 constexpr const char* EscapeRed = "\033[91m";
 constexpr const char* EscapeGreen = "\033[92m";
 constexpr const char* EscapeYellow = "\033[93m";
+constexpr const char* EscapeMagenta = "\033[35m";
 constexpr const char* EscapeHighlight = "\033[42m";
 
 }
@@ -32,7 +33,7 @@ DiagnosticReporter::DiagnosticReporter(const std::string& location, DiagnosticSe
 
 	switch (severity)
 	{
-	case DiagnosticSeverity::Note: m_Buf << "note: "; break;
+	case DiagnosticSeverity::Note: m_Buf << EscapeMagenta << "note: " << EscapeEnd; break;
 	case DiagnosticSeverity::Warning: m_Buf << EscapeYellow << "warning: " << EscapeEnd; break;
 	case DiagnosticSeverity::Error:
 	case DiagnosticSeverity::Fatal: m_Buf << EscapeRed << "error: " << EscapeEnd; break;
@@ -59,7 +60,7 @@ DiagnosticReporter::DiagnosticReporter(const Diagnostic& diagnostic)
 	// <severity>:
 	switch (diagnostic.Severity)
 	{
-	case DiagnosticSeverity::Note: m_Buf << "note: "; break;
+	case DiagnosticSeverity::Note: m_Buf << EscapeMagenta << "note: " << EscapeEnd; break;
 	case DiagnosticSeverity::Warning: m_Buf << EscapeYellow << "warning: " << EscapeEnd; break;
 	case DiagnosticSeverity::Error:
 	case DiagnosticSeverity::Fatal: m_Buf << EscapeRed << "error: " << EscapeEnd; break;

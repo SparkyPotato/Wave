@@ -101,10 +101,23 @@ void Parser::ParseImport()
 	}
 	else
 	{
-		auto& str = Ensure(TokenType::String, "expected string");
-		CImport imp;
-		imp.Path = std::get<std::string>(str.Value);
-		m_Module->CImports.emplace_back(imp);
+		try
+		{
+			auto& str = Ensure(TokenType::String, "expected string");
+			CImport imp;
+			imp.Path = str;
+			m_Module->CImports.emplace_back(imp);
+		}
+		catch (...)
+		{
+			m_Diagnostics.emplace_back(
+				m_Tokens[m_Tok - 2].Marker,
+				DiagnosticSeverity::Note,
+				"to import a Wave module, remove 'extern'"
+			);
+			while (!Check(TokenType::Semicolon)) { Advance(); }
+			return;
+		}
 	}
 
 	Ensure(TokenType::Semicolon, "expected semicolon ';'");
@@ -127,6 +140,7 @@ up<Definition> Parser::ParseDefinition()
 	{
 	case TokenType::Function: return ParseFunctionDefinition();
 	case TokenType::Class: return ParseClassDefinition();
+	case TokenType::Enum: return ParseEnumDefinition();
 	case TokenType::Variable:
 	case TokenType::Const:
 	case TokenType::Static: return ParseVarDefinition();
@@ -134,7 +148,7 @@ up<Definition> Parser::ParseDefinition()
 		m_Diagnostics.emplace_back(
 			tok.Marker,
 			DiagnosticSeverity::Error,
-			"expected definition (var, func, or class)"
+			"expected definition (var, func, enum, or class)"
 		);
 		throw -1;
 	}
@@ -143,7 +157,7 @@ up<Definition> Parser::ParseDefinition()
 up<FunctionDefinition> Parser::ParseFunctionDefinition()
 {
 	auto def = std::make_unique<FunctionDefinition>();
-	def->Ident = Ensure(TokenType::Identifier, "expected identifier");
+	def->Ident = Ensure(TokenType::Identifier, "expected function name identifier");
 	def->Func = ParseFunction();
 
 	return def;
@@ -152,8 +166,8 @@ up<FunctionDefinition> Parser::ParseFunctionDefinition()
 up<VarDefinition> Parser::ParseVarDefinition()
 {
 	auto def = std::make_unique<VarDefinition>();
-	auto& tok = Previous();
-	def->Ident = Ensure(TokenType::Identifier, "expected identifier");
+	def->VarType = Previous();
+	def->Ident = Ensure(TokenType::Identifier, "expected variable name identifier");
 
 	bool hasType = false;
 	if (Check(TokenType::Colon))
@@ -182,7 +196,7 @@ up<VarDefinition> Parser::ParseVarDefinition()
 up<ClassDefinition> Parser::ParseClassDefinition()
 {
 	auto def = std::make_unique<ClassDefinition>();
-	def->Ident = Ensure(TokenType::Identifier, "expected identifier");
+	def->Ident = Ensure(TokenType::Identifier, "expected class name identifier");
 
 	if (Check(TokenType::Colon))
 	{
@@ -192,55 +206,64 @@ up<ClassDefinition> Parser::ParseClassDefinition()
 		} while (Check(TokenType::Comma));
 	}
 
-	Ensure(TokenType::LeftBrace, "expected block");
+	Ensure(TokenType::LeftBrace, "expected definition block");
 
-	enum class Level { Public, Protected, Private };
-	auto level = Level::Public;
+	std::vector<up<Definition>>* emplacer = &def->Public;
 	while (!Check(TokenType::RightBrace))
 	{
-		if (Check(TokenType::Public)) { Ensure(TokenType::Colon, "expected colon ':'");  level = Level::Public; }
-		else if (Check(TokenType::Protected)) { Ensure(TokenType::Colon, "expected colon ':'"); level = Level::Protected; }
-		else if (Check(TokenType::Private)) { Ensure(TokenType::Colon, "expected colon ':'") ;level = Level::Private; }
+		if (Check(TokenType::Public)) { Ensure(TokenType::Colon, "expected colon ':'");  emplacer = &def->Public; }
+		else if (Check(TokenType::Protected)) { Ensure(TokenType::Colon, "expected colon ':'"); emplacer = &def->Protected; }
+		else if (Check(TokenType::Private)) { Ensure(TokenType::Colon, "expected colon ':'") ; emplacer = &def->Private; }
 
-		if (Check(TokenType::Variable))
-		{
-			switch (level)
-			{
-			case Level::Public: def->Public.emplace_back(ParseClassVar()); break;
-			case Level::Protected: def->Protected.emplace_back(ParseClassVar()); break;
-			case Level::Private: def->Private.emplace_back(ParseClassVar()); break;
-			}
-		}
+		if (Check(TokenType::Variable)) { emplacer->emplace_back(ParseVarDefinition()); }
 		else if (Check(TokenType::Static) || Check(TokenType::Const))
 		{
+			auto& prev = Previous();
+			auto& curr = m_Tokens[m_Tok];
+
+			if (prev.Type == TokenType::Const && curr.Type == TokenType::Static
+				|| prev.Type == TokenType::Static && curr.Type == TokenType::Const)
+			{
+				m_Diagnostics.emplace_back(
+					Previous().Marker,
+					DiagnosticSeverity::Error,
+					"function cannot be marked static and const"
+				);
+				throw - 1;
+			}
+
 			if (Check(TokenType::Function) || Check(TokenType::Abstract))
 			{
-				m_Tok--;
-				switch (level)
+				if (Previous().Type == TokenType::Abstract && m_Tokens[m_Tok - 2].Type == TokenType::Static)
 				{
-				case Level::Public: def->Public.emplace_back(ParseClassFunc()); break;
-				case Level::Protected: def->Protected.emplace_back(ParseClassFunc()); break;
-				case Level::Private: def->Private.emplace_back(ParseClassFunc()); break;
+					m_Diagnostics.emplace_back(
+						Previous().Marker,
+						DiagnosticSeverity::Error,
+						"function cannot be marked static and abstract"
+					);
+					throw -1;
 				}
+				m_Tok--;
+				emplacer->emplace_back(ParseClassFunc());
 			}
 			else
 			{
-				switch (level)
-				{
-				case Level::Public: def->Public.emplace_back(ParseClassVar()); break;
-				case Level::Protected: def->Protected.emplace_back(ParseClassVar()); break;
-				case Level::Private: def->Private.emplace_back(ParseClassVar()); break;
-				}
+				emplacer->emplace_back(ParseVarDefinition());
 			}
 		}
+		else if (Check(TokenType::Class)) { emplacer->emplace_back(ParseClassDefinition()); }
+		else if (Check(TokenType::Enum)) { emplacer->emplace_back(ParseEnumDefinition()); }
+		else if (Check(TokenType::Function)) { emplacer->emplace_back(ParseClassFunc()); }
+		else if (Check(TokenType::Construct)) { emplacer->emplace_back(ParseConstructor()); }
+		else if (Check(TokenType::Identifier)) { emplacer->emplace_back(ParseGetterOrSetter()); }
 		else
 		{
-			switch (level)
-			{
-			case Level::Public: def->Public.emplace_back(ParseClassFunc()); break;
-			case Level::Protected: def->Protected.emplace_back(ParseClassFunc()); break;
-			case Level::Private: def->Private.emplace_back(ParseClassFunc()); break;
-			}
+			m_Diagnostics.emplace_back(
+				Previous().Marker,
+				DiagnosticSeverity::Error,
+				"expected definition in class"
+			);
+			throw -1;
 		}
 	}
 
@@ -248,11 +271,22 @@ up<ClassDefinition> Parser::ParseClassDefinition()
 	return def;
 }
 
-up<ClassVar> Parser::ParseClassVar()
+up<EnumDefinition> Parser::ParseEnumDefinition()
 {
-	auto var = std::make_unique<ClassVar>();
-	var->Def = ParseVarDefinition();
-	return var;
+	auto en = std::make_unique<EnumDefinition>();
+	en->Ident = Ensure(TokenType::Identifier, "expected enum name identifier");
+	Ensure(TokenType::LeftBrace, "expected block");
+	if (!Check(TokenType::RightBrace))
+	{
+		do 
+		{
+			en->Elements.emplace_back(Ensure(TokenType::Identifier, "expected identifier"));
+		} while (Check(TokenType::Comma));
+		Ensure(TokenType::RightBrace, "expected closing brace '}'");
+	}
+
+	Ensure(TokenType::Semicolon, "expected semicolon ';'");
+	return en;
 }
 
 up<ClassFunc> Parser::ParseClassFunc()
@@ -260,8 +294,6 @@ up<ClassFunc> Parser::ParseClassFunc()
 	auto& tok = Advance();
 	switch (tok.Type)
 	{
-	case TokenType::Construct: return ParseConstructor();
-	case TokenType::Identifier: m_Tok--; return ParseGetterOrSetter();
 	case TokenType::Static:
 	case TokenType::Const: 
 		if (Check(TokenType::Function)) { return ParseMethod(); }
@@ -306,7 +338,7 @@ up<Abstract> Parser::ParseAbstract()
 {
 	auto abstract = std::make_unique<Abstract>();
 	abstract->IsConst = Previous().Type == TokenType::Const;
-	abstract->Ident = Ensure(TokenType::Identifier, "expected identifier");
+	abstract->Ident = Ensure(TokenType::Identifier, "expected abstract function identifier");
 	Ensure(TokenType::LeftParenthesis, "expected opening parenthesis, '('");
 	if (!Check(TokenType::RightParenthesis))
 	{
@@ -328,7 +360,7 @@ up<Abstract> Parser::ParseAbstract()
 
 up<ClassFunc> Parser::ParseGetterOrSetter()
 {
-	auto& ident = Advance();
+	auto& ident = Previous();
 	if (Check(TokenType::Colon))
 	{
 		auto getter = std::make_unique<Getter>();
@@ -344,6 +376,7 @@ up<ClassFunc> Parser::ParseGetterOrSetter()
 		setter->Ident = ident;
 		setter->SetParam = ParseParam();
 		Ensure(TokenType::RightParenthesis, "expected closing parenthesis ')'");
+		setter->ExecBlock = ParseBlock();
 
 		return setter;
 	}
@@ -389,6 +422,10 @@ up<Type> Parser::ParseType()
 	case TokenType::BoolType: type = std::make_unique<BoolType>(); break;
 	case TokenType::Function: type = ParseFuncType(); break;
 	case TokenType::TypeOf: type = ParseTypeOf(); break;
+	case TokenType::LeftParenthesis:
+		type = ParseType();
+		Ensure(TokenType::RightParenthesis, "expected closing parenthesis ')'");
+		break;
 	case TokenType::Identifier:
 	{
 		auto c = std::make_unique<ClassType>();
@@ -405,6 +442,8 @@ up<Type> Parser::ParseType()
 		);
 		throw -1;
 	}
+
+	type->Tok = tok;
 
 	while (Check(TokenType::LeftIndex))
 	{
@@ -705,6 +744,19 @@ up<Expression> Parser::ParsePrimary()
 		acc->IsCopy = true;
 		return acc;
 	}
+	else if (Check(TokenType::LeftBrace))
+	{
+		auto list = std::make_unique<InitializerList>();
+		if (!Check(TokenType::RightBrace))
+		{
+			do
+			{
+				list->Data.emplace_back(ParseExpression());
+			} while (Check(TokenType::Comma));
+			Ensure(TokenType::RightBrace, "expected closing brace '}'");
+		}
+		return list;
+	}
 	else if (Check(TokenType::LeftParenthesis))
 	{
 		if (IsFunction())
@@ -756,7 +808,17 @@ up<Function> Parser::ParseFunction()
 	if (Check(TokenType::Colon))
 	{
 		func->IsReturnConst = Check(TokenType::Const);
-		func->ReturnType = ParseType();
+		auto& col = Previous();
+		try { func->ReturnType = ParseType(); }
+		catch (...)
+		{
+			m_Diagnostics.emplace_back(
+				col.Marker,
+				DiagnosticSeverity::Note,
+				"consider removing if function does not return any value"
+			);
+			throw;
+		}
 	}
 
 	func->ExecBlock = ParseBlock();
@@ -767,7 +829,7 @@ up<Function> Parser::ParseFunction()
 Parameter Parser::ParseParam()
 {
 	Parameter param;
-	param.Ident = Ensure(TokenType::Identifier, "expected identifier");
+	param.Ident = Ensure(TokenType::Identifier, "expected parameter name identifier");
 	if (Check(TokenType::Colon))
 	{
 		param.IsConst = Check(TokenType::Const);
@@ -786,10 +848,10 @@ up<Block> Parser::ParseBlock()
 {
 	auto block = std::make_unique<Block>();
 	Ensure(TokenType::LeftBrace, "expected block");
-	do
+	while (!Check(TokenType::RightBrace))
 	{
 		block->Statements.emplace_back(ParseStatement());
-	} while (!Check(TokenType::RightBrace));
+	}
 	return block;
 }
 
@@ -841,7 +903,10 @@ up<Statement> Parser::ParseStatement()
 			return expr;
 		}
 	}
-	catch (...) {}
+	catch (...) 
+	{
+		while (!Check(TokenType::Semicolon)) { Advance(); }
+	}
 
 	return std::make_unique<ExpressionStatement>();
 }
@@ -858,24 +923,48 @@ up<While> Parser::ParseWhile()
 up<For> Parser::ParseFor()
 {
 	auto loop = std::make_unique<For>();
-	if (!Check(TokenType::Semicolon))
+
+	auto tok = m_Tok;
+	bool isRange = false;
+	while (!Check(TokenType::LeftBrace)) 
+	{ 
+		isRange = (Advance().Type == TokenType::In);
+		if (isRange) { break; }
+	}
+	m_Tok = tok;
+
+	if (isRange)
 	{
-		if (IsDefinition()) { loop->Initializer = ParseDefinition(); }
-		else { loop->Initializer = ParseExpression(); }
-		Ensure(TokenType::Semicolon, "expected semicolon ';'");
+		ForRange range;
+		range.Ident = Ensure(TokenType::Identifier, "expected range-based for identifier");
+		Ensure(TokenType::In, "expected keyword in");
+		range.Range = ParseExpression();
+		loop->Condition = std::move(range);
+	}
+	else
+	{
+		ForCond cond;
+		if (!Check(TokenType::Semicolon))
+		{
+			if (IsDefinition()) { cond.Initializer = ParseDefinition(); }
+			else { cond.Initializer = ParseExpression(); }
+			Ensure(TokenType::Semicolon, "expected semicolon ';'");
+		}
+
+		if (!Check(TokenType::Semicolon))
+		{
+			cond.Condition = ParseExpression();
+			Ensure(TokenType::Semicolon, "expected semicolon ';'");
+		}
+
+		if (!Check(TokenType::LeftBrace))
+		{
+			cond.Increment = ParseExpression();
+		}
+		loop->Condition = std::move(cond);
+		m_Tok--;
 	}
 	
-	if (!Check(TokenType::Semicolon))
-	{
-		loop->Condition = ParseExpression();
-		Ensure(TokenType::Semicolon, "expected semicolon ';'");
-	}
-	
-	if (!Check(TokenType::LeftBrace))
-	{
-		loop->Increment = ParseExpression();
-	}
-	m_Tok--;
 
 	loop->ExecBlock = ParseBlock();
 
@@ -937,6 +1026,7 @@ bool Parser::IsDefinition()
 	case TokenType::Class: 
 	case TokenType::Variable:
 	case TokenType::Const:
+	case TokenType::Enum:
 	case TokenType::Static: return true;
 	default: return false;
 	}

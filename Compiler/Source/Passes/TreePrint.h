@@ -53,11 +53,11 @@ public:
 
 	virtual void Visit(ClassType& node, std::any& context) override;
 
-	virtual void Visit(ClassVar& node, std::any& context) override;
-
 	virtual void Visit(Constructor& node, std::any& context) override;
 
 	virtual void Visit(Continue& node, std::any& context) override;
+
+	virtual void Visit(EnumDefinition& node, std::any& context) override;
 
 	virtual void Visit(ExpressionStatement& node, std::any& context) override;
 
@@ -76,6 +76,8 @@ public:
 	virtual void Visit(Group& node, std::any& context) override;
 
 	virtual void Visit(If& node, std::any& context) override;
+
+	virtual void Visit(InitializerList& node, std::any& context) override;
 
 	virtual void Visit(IntType& node, std::any& context) override;
 

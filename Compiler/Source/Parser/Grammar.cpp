@@ -96,11 +96,6 @@ void VarDefinition::Accept(ASTVisitor& visitor, std::any& context)
 	visitor.Visit(*this, context);
 }
 
-void ClassVar::Accept(ASTVisitor& visitor, std::any& context)
-{
-	visitor.Visit(*this, context);
-}
-
 void ExpressionStatement::Accept(ASTVisitor& visitor, std::any& context)
 {
 	visitor.Visit(*this, context);
@@ -202,6 +197,16 @@ void ArrayType::Accept(ASTVisitor& visitor, std::any& context)
 }
 
 void ArrayIndex::Accept(ASTVisitor& visitor, std::any& context)
+{
+	visitor.Visit(*this, context);
+}
+
+void EnumDefinition::Accept(ASTVisitor& visitor, std::any& context)
+{
+	visitor.Visit(*this, context);
+}
+
+void InitializerList::Accept(ASTVisitor& visitor, std::any& context)
 {
 	visitor.Visit(*this, context);
 }

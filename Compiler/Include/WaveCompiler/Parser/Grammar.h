@@ -38,7 +38,7 @@ struct ModuleImport
 struct CImport
 {
 	/// Imported C file.
-	std::filesystem::path Path;
+	Token Path;
 };
 
 class ASTVisitor;
@@ -104,6 +104,8 @@ struct Type
 {
 	/// Virtual destructor.
 	virtual ~Type() {}
+
+	Token Tok;
 
 	/// Accept a visitor.
 	///
@@ -194,21 +196,8 @@ struct Parameter
 	up<Type> DataType;
 };
 
-/// Component of a class.
-struct ClassComponent
-{
-	/// Virtual destructor.
-	virtual ~ClassComponent() {}
-
-	/// Accept a visitor.
-	///
-	/// \param visitor Visitor to accept.
-	/// \param context Context argument to pass on to visit.
-	virtual void Accept(ASTVisitor& visitor, std::any& context) = 0;
-};
-
 /// Class function.
-struct ClassFunc : ClassComponent
+struct ClassFunc : Definition
 {
 	/// Accept a visitor.
 	///
@@ -236,9 +225,21 @@ struct Abstract : ClassFunc
 struct ClassDefinition : Definition
 {
 	std::vector<Identifier> Bases;
-	std::vector<up<ClassComponent>> Public;
-	std::vector<up<ClassComponent>> Protected;
-	std::vector<up<ClassComponent>> Private;
+	std::vector<up<Definition>> Public;
+	std::vector<up<Definition>> Protected;
+	std::vector<up<Definition>> Private;
+
+	/// Accept a visitor.
+	///
+	/// \param visitor Visitor to accept.
+	/// \param context Context argument to pass on to visit.
+	virtual void Accept(ASTVisitor& visitor, std::any& context) override;
+};
+
+/// Enum definition.
+struct EnumDefinition : Definition
+{
+	std::vector<Token> Elements;
 
 	/// Accept a visitor.
 	///
@@ -383,18 +384,6 @@ struct VarDefinition : Definition
 	virtual void Accept(ASTVisitor& visitor, std::any& context) override;
 };
 
-/// Class variable
-struct ClassVar : ClassComponent
-{
-	up<VarDefinition> Def;
-
-	/// Accept a visitor.
-	///
-	/// \param visitor Visitor to accept.
-	/// \param context Context argument to pass on to visit.
-	virtual void Accept(ASTVisitor& visitor, std::any& context) override;
-};
-
 /// Statement which evaluates an expression and discards the result.
 struct ExpressionStatement : Statement
 {
@@ -420,12 +409,25 @@ struct While : Statement
 	virtual void Accept(ASTVisitor& visitor, std::any& context) override;
 };
 
-/// For loop.
-struct For : Statement
+/// For loop condition.
+struct ForCond
 {
 	std::variant<up<Expression>, up<Definition>> Initializer;
 	up<Expression> Condition;
 	up<Expression> Increment;
+};
+
+/// For loop range
+struct ForRange
+{
+	Token Ident;
+	up<Expression> Range;
+};
+
+/// For loop.
+struct For : Statement
+{
+	std::variant<ForCond, ForRange> Condition;
 	up<Block> ExecBlock;
 
 	/// Accept a visitor.
@@ -620,6 +622,17 @@ struct Group : Expression
 	virtual void Accept(ASTVisitor& visitor, std::any& context) override;
 };
 
+struct InitializerList : Expression
+{
+	std::vector<up<Expression>> Data;
+
+	/// Accept a visitor.
+	///
+	/// \param visitor Visitor to accept.
+	/// \param context Context argument to pass on to visit.
+	virtual void Accept(ASTVisitor& visitor, std::any& context) override;
+};
+
 /// A variable access expression.
 struct VarAccess : Expression
 {
@@ -709,6 +722,12 @@ public:
 	///
 	/// \param node Node to visit.
 	/// \param context Parameter passed to node.Visit().
+	virtual void Visit(CharType& node, std::any& context) = 0;
+
+	/// Visit an AST Node.
+	///
+	/// \param node Node to visit.
+	/// \param context Parameter passed to node.Visit().
 	virtual void Visit(ClassDefinition& node, std::any& context) = 0;
 
 	/// Visit an AST Node.
@@ -721,12 +740,6 @@ public:
 	///
 	/// \param node Node to visit.
 	/// \param context Parameter passed to node.Visit().
-	virtual void Visit(ClassVar& node, std::any& context) = 0;
-
-	/// Visit an AST Node.
-	///
-	/// \param node Node to visit.
-	/// \param context Parameter passed to node.Visit().
 	virtual void Visit(Constructor& node, std::any& context) = 0;
 
 	/// Visit an AST Node.
@@ -734,6 +747,12 @@ public:
 	/// \param node Node to visit.
 	/// \param context Parameter passed to node.Visit().
 	virtual void Visit(Continue& node, std::any& context) = 0;
+
+	/// Visit an AST Node.
+	///
+	/// \param node Node to visit.
+	/// \param context Parameter passed to node.Visit().
+	virtual void Visit(EnumDefinition& node, std::any& context) = 0;
 
 	/// Visit an AST Node.
 	///
@@ -793,6 +812,12 @@ public:
 	///
 	/// \param node Node to visit.
 	/// \param context Parameter passed to node.Visit().
+	virtual void Visit(InitializerList& node, std::any& context) = 0;
+
+	/// Visit an AST Node.
+	///
+	/// \param node Node to visit.
+	/// \param context Parameter passed to node.Visit().
 	virtual void Visit(IntType& node, std::any& context) = 0;
 
 	/// Visit an AST Node.
@@ -830,12 +855,6 @@ public:
 	/// \param node Node to visit.
 	/// \param context Parameter passed to node.Visit().
 	virtual void Visit(Setter& node, std::any& context) = 0;
-
-	/// Visit an AST Node.
-	///
-	/// \param node Node to visit.
-	/// \param context Parameter passed to node.Visit().
-	virtual void Visit(CharType& node, std::any& context) = 0;
 
 	/// Visit an AST Node.
 	///

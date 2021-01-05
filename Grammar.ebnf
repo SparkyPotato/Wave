@@ -4,7 +4,7 @@ moduleDefinition = "module", subIdentifier, ";";
 moduleImport = "import", ( subIdentifier, [ "as", subIdentifier ] ) | ( "extern", string ), ";";
 
 globalDefinition = [ "export" ] definition;
-definition = funcDefinition | varDefinition | classDefinition;
+definition = funcDefinition | varDefinition | classDefinition | enumDefinition;
 
 funcDefinition = "func", identifier, function;
 function = "(", [ parameters ] ")", [ ":", [ "const" ], type ], block
@@ -15,7 +15,7 @@ varDefinition = ( "const" | "static" | "var" ), identifier, [ ":", type ], [ "="
 	
 classDefinition = "class", identifier, [ ":", subIdentifier, { ",", subIdentifier } ], 
 	"{", { [ ( "public" | "protected" | "private" ), ":" ], 
-	( varDefinition | classFunc ) }, "}", ";";
+	( varDefinition | classFunc | classDefinition | enumDefinition ) }, "}", ";";
 	
 classFunc = construct | getter | setter | ( [ "static" | "const" ], funcDefinition )
 	| ( [ "const" ], "abstract", identifier, "(", [ parameters ] ")", [ ":", type ], ";" );
@@ -23,6 +23,8 @@ construct = "construct", "(", [ parameters ], ")", block;
 getter = identifier, ":", type, block;
 setter = identifier, "(", parameter, ")", block;
 	
+enumDefinition = "enum", "{", [ identifier ], { ",", identifier }, "}", ";";
+
 type = ( "int" | "real" | "bool" | "char" | funcType | identifier | ( "typeof", expression ) ), [ "[", expression, "]" ];
 funcType = "func", "(", [ types ] ")", [ ":", type ];
 types = type, { ",", type };
@@ -38,7 +40,9 @@ if = "if", expression, block,
 	[ "else", block ]
 
 while = "while", expression, block;
-for = "for", [ expression | definition ], ";", [ expression ], ";", [ expression ], block;
+for = "for", forCond, block;
+forCond = ( [ expression | definition ], ";", [ expression ], ";", [ expression ] )
+	| ( identifier, "in", expression );
 
 try = "try", block, { "catch", param, block }-;
 throw = "throw", expression;
@@ -59,7 +63,8 @@ factor = unary, { ( "/" | "*" ), unary ) };
 unary = ( ( "!" | "-" ), unary ) | call;
 call = primary, { "(", [ arguments ], ")" };
 arguments = expression, { ",", expression };
-primary = int | real | string | bool | function | ( "(", expression, ")" ) | ( [ copy ], subIdentifier, [ "[", expression, "]" ] );
+primary = int | real | string | bool | function | ( "(", expression, ")" ) | ( [ copy ], subIdentifier, [ "[", expression, "]" ] )
+	| ( "{", [ expression ], { ",", expression }, "}" );
 
 subIdentifier = identifier, { ".", identifier };
 identifier = ? lexer identifier token ?

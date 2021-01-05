@@ -75,10 +75,10 @@ private:
 	/// \return The class definition.
 	up<ClassDefinition> ParseClassDefinition();
 
-	/// Parse a class variable. Expects cursor to be after var keywords.
+	/// Parse an enum definition. Expects cursor to be after enum keyword.
 	///
-	/// \return The class variable.
-	up<ClassVar> ParseClassVar();
+	/// \return The enum definition.
+	up<EnumDefinition> ParseEnumDefinition();
 
 	/// Parse a class function. Expects cursor to be at the first token.
 	///

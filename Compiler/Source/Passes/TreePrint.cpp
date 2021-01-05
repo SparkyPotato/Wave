@@ -53,7 +53,7 @@ void TreePrinter::Print()
 	std::cout << "External Imports: \n";
 	for (auto& import : m_Module->CImports)
 	{
-		std::cout << import.Path;
+		Lexer::PrettyPrint(import.Path);
 	}
 	std::cout << "\n\n";
 
@@ -191,11 +191,6 @@ void TreePrinter::Visit(ClassType& node, std::any& context)
 	std::cout << node.Ident;
 }
 
-void TreePrinter::Visit(ClassVar& node, std::any& context)
-{
-	node.Def->Accept(*this, context);
-}
-
 void TreePrinter::Visit(Constructor& node, std::any& context)
 {
 	std::cout << "construct (";
@@ -215,6 +210,21 @@ void TreePrinter::Visit(Continue& node, std::any& context)
 	std::cout << "continue;";
 }
 
+void TreePrinter::Visit(EnumDefinition& node, std::any& context)
+{
+	std::cout << "enum ";
+	Lexer::PrettyPrint(node.Ident);
+	std::cout << "{\n" << Indent(context);
+	IncIndent(context);
+	for (auto& tok : node.Elements)
+	{
+		Lexer::PrettyPrint(tok);
+		std::cout << "\n" << Indent(context);
+	}
+	DecIndent(context);
+	std::cout << "};";
+}
+
 void TreePrinter::Visit(ExpressionStatement& node, std::any& context)
 {
 	node.Expr->Accept(*this, context);
@@ -224,11 +234,24 @@ void TreePrinter::Visit(ExpressionStatement& node, std::any& context)
 void TreePrinter::Visit(For& node, std::any& context)
 {
 	std::cout << "for ";
-	std::visit([&](auto& v) { v->Accept(*this, context); }, node.Initializer);
-	std::cout << " ; ";
-	if (node.Condition) { node.Condition->Accept(*this, context); }
-	std::cout << " ; ";
-	if (node.Increment) { node.Increment->Accept(*this, context); }
+	if (node.Condition.index() == 0)
+	{
+		ForCond& cond = std::get<ForCond>(node.Condition);
+		std::visit([&](auto& v) { v->Accept(*this, context); }, cond.Initializer);
+		std::cout << " ; ";
+		if (cond.Condition) { cond.Condition->Accept(*this, context); }
+		std::cout << " ; ";
+		if (cond.Increment) { cond.Increment->Accept(*this, context); }
+	}
+	else
+	{
+		ForRange& range = std::get<ForRange>(node.Condition);
+		Lexer::PrettyPrint(range.Ident);
+		std::cout << " in ";
+		range.Range->Accept(*this, context);
+		std::cout << " ";
+	}
+
 	node.ExecBlock->Accept(*this, context);
 }
 
@@ -300,6 +323,20 @@ void TreePrinter::Visit(If& node, std::any& context)
 		elif.True->Accept(*this, context);
 	}
 	if (node.Else) { node.Else->Accept(*this, context); }
+}
+
+void TreePrinter::Visit(InitializerList& node, std::any& context)
+{
+	std::cout << "{\n";
+	IncIndent(context);
+	std::cout << Indent(context);
+	for (auto& exp : node.Data)
+	{
+		exp->Accept(*this, context);
+		std::cout << ",\n" << Indent(context);
+	}
+	DecIndent(context);
+	std::cout << "\n" << Indent(context) << "}";
 }
 
 void TreePrinter::Visit(IntType& node, std::any& context)
@@ -405,7 +442,9 @@ void TreePrinter::Visit(VarDefinition& node, std::any& context)
 
 void TreePrinter::Visit(While& node, std::any& context)
 {
-	
+	std::cout << "while ";
+	node.Condition->Accept(*this, context);
+	node.ExecBlock->Accept(*this, context);
 }
 
 std::string TreePrinter::Indent(const std::any& indentLevel)

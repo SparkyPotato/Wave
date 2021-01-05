@@ -123,6 +123,8 @@ void Lexer::Lex()
 			m_Marker.Pos += m_Marker.Length;
 			m_Marker.Length = 0;
 			break;
+		case EOF:
+			goto End;
 		default:
 			if (IsAlphabet(c)) { Identifier(c); }
 			else
@@ -142,6 +144,8 @@ void Lexer::Lex()
 	}
 
 	PushToken(TokenType::Null);
+
+	End:
 
 	if (m_Context.IsDebugOutputEnabled()) 
 	{
@@ -198,12 +202,14 @@ void Lexer::PrettyPrint(const Token& token)
 	case TokenType::True: std::cout << "true"; break;
 	case TokenType::False: std::cout << "false"; break;
 	case TokenType::For: std::cout << "for"; break;
+	case TokenType::In: std::cout << "in"; break;
 	case TokenType::While: std::cout << "while"; break;
 	case TokenType::Break: std::cout << "break"; break;
 	case TokenType::Continue: std::cout << "continue"; break;
 	case TokenType::Try: std::cout << "try"; break;
 	case TokenType::Catch: std::cout << "catch"; break;
 	case TokenType::Throw: std::cout << "throw"; break;
+	case TokenType::Enum: std::cout << "enum"; break;
 	case TokenType::Class: std::cout << "class"; break;
 	case TokenType::Construct: std::cout << "construct"; break;
 	case TokenType::Abstract: std::cout << "abstract"; break;
@@ -425,12 +431,14 @@ static std::map<std::string, TokenType> s_Reserved =
 	{ "true", TokenType::True },
 	{ "false", TokenType::False },
 	{ "for", TokenType::For },
+	{ "in", TokenType::In },
 	{ "while", TokenType::While },
 	{ "break", TokenType::Break },
 	{ "continue", TokenType::Continue },
 	{ "try", TokenType::Try },
 	{ "catch", TokenType::Catch },
 	{ "throw", TokenType::Throw },
+	{ "enum", TokenType::Enum },
 	{ "class", TokenType::Class },
 	{ "construct", TokenType::Construct },
 	{ "abstract", TokenType::Abstract },

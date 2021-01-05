@@ -1,37 +1,37 @@
 module Tests.Test1;
 
-import Standard.IO as _;
-import extern "stdio.h";
-
-class HelloWorld
+class Square
 {
-public:
-	static func Print(output: const)
+	construct(side: real)
 	{
-		Print(output);
-		Print("\n");
+		m_Side = side;
+		m_Area = m_Side * m_Side;
 	}
 
-	static Func = (output: const)
+	Area: real
 	{
-		Print(output);
-		Print("\n");
-	};
+		return m_Area;
+	}
 
-	const abstract Thingy();
+	Side(side: real)
+	{
+		m_Side = side;
+		m_Area = m_Side * m_Side;
+	}
+
+private:
+	var m_Side: real;
+	var m_Area: real;
 };
 
-func main(args: char[][])
+func main(): int
 {
-	HelloWorld.Print("Hello, World!");
-	HelloWorld.Func("Hello, World!");
+	var s = { 5 };
 
-	Print("The first argument is {}\n", args[0]);
-
-	if 5 > 3
+	for a in range(0, 10)
 	{
-		Print("5 is greater than 3");
+		
 	}
-
-	return 0;
+	
+	return s.Area;
 }
