@@ -1,0 +1,23 @@
+module Std.String;
+
+export class String
+{
+public:
+	construct(str: const char[])
+	{
+		m_String = copy str;
+	}
+
+	static op+(str1: const String, str2: const String): String
+	{
+		return String(str1.m_String + str2.m_String);
+	}
+
+	const func Length(): int
+	{
+		return m_String.size();
+	}
+
+private:
+	var m_String: char[];
+};

@@ -42,6 +42,7 @@ void ParseArguments(int argc, const char* const* argv)
 				DiagnosticReporter diag("wavec", DiagnosticSeverity::Fatal);
 				diag << "source file does not exist: '" << path.string() << "'";
 				diag.Dump();
+				continue;
 			}
 
 			Args::SourceFiles.emplace_back(std::move(path));

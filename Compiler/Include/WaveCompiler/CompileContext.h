@@ -20,7 +20,7 @@ namespace Wave {
 
 /// Class for storage of compiler options,
 /// currently does nothing.
-class WAVEC_API CompileContext
+class CompileContext
 {
 public:
 	CompileContext() = default;

@@ -212,6 +212,7 @@ struct Abstract : ClassFunc
 	Token Ident;
 	std::vector<Parameter> Params;
 	up<Type> ReturnType;
+	bool IsReturnConst = false;
 	bool IsConst = false;
 
 	/// Accept a visitor.
@@ -252,6 +253,21 @@ struct EnumDefinition : Definition
 struct Block : Statement
 {
 	std::vector<up<Statement>> Statements;
+
+	/// Accept a visitor.
+	///
+	/// \param visitor Visitor to accept.
+	/// \param context Context argument to pass on to visit.
+	virtual void Accept(ASTVisitor& visitor, std::any& context) override;
+};
+
+struct OperatorOverload : ClassFunc
+{
+	Token Operator;
+	bool IsUnary = false;
+	Parameter Left, Right;
+	up<Block> ExecBlock;
+	up<Type> ReturnType;
 
 	/// Accept a visitor.
 	///
@@ -338,6 +354,17 @@ struct ArrayType : Type
 {
 	up<Type> HoldType;
 	up<Expression> Size;
+
+	/// Accept a visitor.
+	///
+	/// \param visitor Visitor to accept.
+	/// \param context Context argument to pass on to visit.
+	virtual void Accept(ASTVisitor& visitor, std::any& context) override;
+};
+
+struct TupleType : Type
+{
+	std::vector<up<Type>> Types;
 
 	/// Accept a visitor.
 	///
@@ -494,6 +521,7 @@ struct Function : Expression
 	std::vector<Parameter> Params;
 	up<Type> ReturnType;
 	bool IsReturnConst = false;
+	bool IsVariadic = false;
 	up<Block> ExecBlock;
 
 	/// Accept a visitor.
@@ -837,6 +865,12 @@ public:
 	/// \param node Node to visit.
 	/// \param context Parameter passed to node.Visit().
 	virtual void Visit(Method& node, std::any& context) = 0;
+
+	/// Visit an AST Node.
+	///
+	/// \param node Node to visit.
+	/// \param context Parameter passed to node.Visit().
+	virtual void Visit(OperatorOverload& node, std::any& context) = 0;
 	
 	/// Visit an AST Node.
 	///
@@ -867,6 +901,12 @@ public:
 	/// \param node Node to visit.
 	/// \param context Parameter passed to node.Visit().
 	virtual void Visit(Try& node, std::any& context) = 0;
+
+	/// Visit an AST Node.
+	///
+	/// \param node Node to visit.
+	/// \param context Parameter passed to node.Visit().
+	virtual void Visit(TupleType& node, std::any& context) = 0;
 
 	/// Visit an AST Node.
 	///

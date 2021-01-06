@@ -17,11 +17,6 @@
 #ifdef _WIN32
 #	ifdef _WIN64
 #		define PLATFORM_WINDOWS
-#		ifdef BUILD_WAVEC
-#			define WAVEC_API __declspec(dllexport)
-#		else
-#			define WAVEC_API __declspec(dllimport)
-#		endif
 #	else
 #		error 32 bit is not supported!
 #	endif
@@ -42,8 +37,4 @@
 #	define PLATFORM_LINUX
 #else
 #	error Unknown platform!
-#endif
-
-#ifndef WAVEC_API
-# 	define WAVEC_API
 #endif

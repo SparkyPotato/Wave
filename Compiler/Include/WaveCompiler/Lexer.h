@@ -37,7 +37,8 @@ enum class TokenType
 	LeftParenthesis, RightParenthesis, 
 	LeftBrace, RightBrace,
 	LeftIndex, RightIndex,
-	Comma, Period, Minus, Plus, Colon, Semicolon, Slash, Star,
+	Comma, Period, Minus, Plus, Colon, Semicolon, Slash, Star, Percentage,
+	MinusEqual, PlusEqual, SlashEqual, StarEqual, PercentageEqual,
 	
 	// Single or double character tokens
 	Not, NotEqual,
@@ -55,7 +56,7 @@ enum class TokenType
 	For, In, While,
 	Break, Continue,
 	Try, Catch, Throw,
-	Enum,
+	Enum, Tuple,
 	Class, Construct, Abstract,
 	Static, Const, Copy,
 	Public, Private, Protected,
@@ -70,7 +71,7 @@ enum class TokenType
 };
 
 /// Lexer token.
-struct WAVEC_API Token
+struct Token
 {
 	Token()
 		: Marker(""), Type(TokenType::Null)
@@ -104,7 +105,7 @@ struct WAVEC_API Token
 };
 
 /// Wave lexer.
-class WAVEC_API Lexer
+class Lexer
 {
 public:
 	/// Initialize a lexer from an input stream.
@@ -148,7 +149,7 @@ private:
 	/// Look ahead at the next characters.
 	/// Updates the FileMarker if the character was found.
 	/// 
-	/// \param c String to match with.
+	/// \param c Character to match with.
 	/// 
 	/// \return If the character was found
 	bool LookAhead(char c);

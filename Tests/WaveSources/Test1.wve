@@ -1,37 +1,6 @@
 module Tests.Test1;
 
-class Square
+func main()
 {
-	construct(side: real)
-	{
-		m_Side = side;
-		m_Area = m_Side * m_Side;
-	}
-
-	Area: real
-	{
-		return m_Area;
-	}
-
-	Side(side: real)
-	{
-		m_Side = side;
-		m_Area = m_Side * m_Side;
-	}
-
-private:
-	var m_Side: real;
-	var m_Area: real;
-};
-
-func main(): int
-{
-	var s = { 5 };
-
-	for a in range(0, 10)
-	{
-		
-	}
-	
-	return s.Area;
+	return 0;
 }

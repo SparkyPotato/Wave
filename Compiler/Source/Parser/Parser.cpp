@@ -16,8 +16,6 @@
 
 #include <iostream>
 
-#include "Passes/TreePrint.h"
-
 namespace Wave {
 
 Parser::Parser(CompileContext& context, const Lexer& lexer)
@@ -57,14 +55,6 @@ void Parser::Parse()
 		}
 	}
 	catch (...) {}
-
-	if (m_Context.IsDebugOutputEnabled())
-	{
-		std::cout << "PARSER OUTPUT: \n\n";
-
-		TreePrinter printer(GetModule());
-		printer.Print();
-	}
 }
 
 const std::vector<Wave::Diagnostic>& Parser::GetDiagnostics()
@@ -221,6 +211,12 @@ up<ClassDefinition> Parser::ParseClassDefinition()
 			auto& prev = Previous();
 			auto& curr = m_Tokens[m_Tok];
 
+			if (Check(TokenType::Identifier))
+			{
+				if (std::get<std::string>(Previous().Value) == "op") { emplacer->emplace_back(ParseOperator()); continue; }
+				else { m_Tok--; }
+			}
+
 			if (prev.Type == TokenType::Const && curr.Type == TokenType::Static
 				|| prev.Type == TokenType::Static && curr.Type == TokenType::Const)
 			{
@@ -229,22 +225,22 @@ up<ClassDefinition> Parser::ParseClassDefinition()
 					DiagnosticSeverity::Error,
 					"function cannot be marked static and const"
 				);
-				throw - 1;
+				throw -1;
 			}
 
-			if (Check(TokenType::Function) || Check(TokenType::Abstract))
+			if (Check(TokenType::Function)) { emplacer->emplace_back(ParseMethod()); }
+			else if (Check(TokenType::Abstract))
 			{
-				if (Previous().Type == TokenType::Abstract && m_Tokens[m_Tok - 2].Type == TokenType::Static)
+				if (m_Tokens[m_Tok - 2].Type == TokenType::Static)
 				{
 					m_Diagnostics.emplace_back(
 						Previous().Marker,
 						DiagnosticSeverity::Error,
 						"function cannot be marked static and abstract"
 					);
-					throw -1;
+					throw - 1;
 				}
-				m_Tok--;
-				emplacer->emplace_back(ParseClassFunc());
+				emplacer->emplace_back(ParseAbstract());
 			}
 			else
 			{
@@ -253,7 +249,8 @@ up<ClassDefinition> Parser::ParseClassDefinition()
 		}
 		else if (Check(TokenType::Class)) { emplacer->emplace_back(ParseClassDefinition()); }
 		else if (Check(TokenType::Enum)) { emplacer->emplace_back(ParseEnumDefinition()); }
-		else if (Check(TokenType::Function)) { emplacer->emplace_back(ParseClassFunc()); }
+		else if (Check(TokenType::Function)) { emplacer->emplace_back(ParseMethod()); }
+		else if (Check(TokenType::Abstract)) { emplacer->emplace_back(ParseAbstract()); }
 		else if (Check(TokenType::Construct)) { emplacer->emplace_back(ParseConstructor()); }
 		else if (Check(TokenType::Identifier)) { emplacer->emplace_back(ParseGetterOrSetter()); }
 		else
@@ -289,36 +286,6 @@ up<EnumDefinition> Parser::ParseEnumDefinition()
 	return en;
 }
 
-up<ClassFunc> Parser::ParseClassFunc()
-{
-	auto& tok = Advance();
-	switch (tok.Type)
-	{
-	case TokenType::Static:
-	case TokenType::Const: 
-		if (Check(TokenType::Function)) { return ParseMethod(); }
-		else if (Check(TokenType::Abstract)) { return ParseAbstract(); }
-		else
-		{
-			m_Diagnostics.emplace_back(
-				Previous().Marker,
-				DiagnosticSeverity::Error,
-				"expected class function"
-			);
-			throw -1;
-		}
-	case TokenType::Function: return ParseMethod();
-	case TokenType::Abstract: return ParseAbstract();
-	default:
-		m_Diagnostics.emplace_back(
-			Previous().Marker,
-			DiagnosticSeverity::Error,
-			"expected class function"
-		);
-		throw -1;
-	}
-}
-
 up<Method> Parser::ParseMethod()
 {
 	auto method = std::make_unique<Method>();
@@ -351,6 +318,7 @@ up<Abstract> Parser::ParseAbstract()
 
 	if (Check(TokenType::Colon))
 	{
+		abstract->IsReturnConst = Check(TokenType::Const);
 		abstract->ReturnType = ParseType();
 	}
 	
@@ -391,6 +359,80 @@ up<ClassFunc> Parser::ParseGetterOrSetter()
 	}
 }
 
+up<OperatorOverload> Parser::ParseOperator()
+{
+	auto op = std::make_unique<OperatorOverload>();
+	op->Ident = Previous();
+	op->Operator = Advance();
+	if (op->Operator.Type != TokenType::Plus
+		&& op->Operator.Type != TokenType::Minus
+		&& op->Operator.Type != TokenType::Star
+		&& op->Operator.Type != TokenType::Slash
+		&& op->Operator.Type != TokenType::Percentage
+		&& op->Operator.Type != TokenType::EqualEqual
+		&& op->Operator.Type != TokenType::NotEqual
+		&& op->Operator.Type != TokenType::Not
+		&& op->Operator.Type != TokenType::Greater
+		&& op->Operator.Type != TokenType::GreaterEqual
+		&& op->Operator.Type != TokenType::Lesser
+		&& op->Operator.Type != TokenType::LesserEqual)
+	{
+		m_Diagnostics.emplace_back(
+			op->Operator.Marker,
+			DiagnosticSeverity::Error,
+			"cannot overload"
+		);
+		throw -1;
+	}
+
+	Ensure(TokenType::LeftParenthesis, "expected opening parenthesis '('");
+	op->Left = ParseParam();
+	op->IsUnary = !Check(TokenType::Comma);
+	if (op->IsUnary)
+	{
+		if (op->Operator.Type != TokenType::Minus && op->Operator.Type != TokenType::Not)
+		{
+			m_Diagnostics.emplace_back(
+				op->Operator.Marker,
+				DiagnosticSeverity::Error,
+				"only '-' and '!' are allowed unary overloads"
+			);
+			throw -1;
+		}
+		op->Right = std::move(op->Left);
+	}
+	else
+	{
+		if (op->Operator.Type == TokenType::Not)
+		{
+			m_Diagnostics.emplace_back(
+				op->Operator.Marker,
+				DiagnosticSeverity::Error,
+				"'!' can only be overloaded as a unary"
+			);
+			throw -1;
+		}
+
+		op->Right = ParseParam();
+	}
+	Ensure(TokenType::RightParenthesis, "expected closing parenthesis, ')'");
+
+	try { Ensure(TokenType::Colon, "expected return type"); }
+	catch (...)
+	{
+		m_Diagnostics.emplace_back(
+			Previous().Marker,
+			DiagnosticSeverity::Note,
+			"operator overloads must have a return type"
+		);
+		throw;
+	}
+
+	op->ReturnType = ParseType();
+	op->ExecBlock = ParseBlock();
+	return op;
+}
+
 up<Constructor> Parser::ParseConstructor()
 {
 	auto construct = std::make_unique<Constructor>();
@@ -422,6 +464,7 @@ up<Type> Parser::ParseType()
 	case TokenType::BoolType: type = std::make_unique<BoolType>(); break;
 	case TokenType::Function: type = ParseFuncType(); break;
 	case TokenType::TypeOf: type = ParseTypeOf(); break;
+	case TokenType::Tuple: type = ParseTuple(); break;
 	case TokenType::LeftParenthesis:
 		type = ParseType();
 		Ensure(TokenType::RightParenthesis, "expected closing parenthesis ')'");
@@ -469,6 +512,20 @@ up<TypeOf> Parser::ParseTypeOf()
 	return type;
 }
 
+up<TupleType> Parser::ParseTuple()
+{
+	auto tuple = std::make_unique<TupleType>();
+	tuple->Tok = Previous();
+	Ensure(TokenType::Lesser, "expected opening angle bracket '<'");
+	do
+	{
+		tuple->Types.emplace_back(ParseType());
+	} while (Check(TokenType::Comma));
+	Ensure(TokenType::Greater, "expected closing angle bracket '>'");
+
+	return tuple;
+}
+
 up<FuncType> Parser::ParseFuncType()
 {
 	auto type = std::make_unique<FuncType>();
@@ -498,7 +555,7 @@ up<Expression> Parser::ParseExpression()
 
 up<Expression> Parser::ParseAssignment()
 {
-	auto expr = ParseEquality();
+	auto expr = ParseOr();
 
 	if (Check(TokenType::Equal))
 	{
@@ -622,7 +679,7 @@ up<Expression> Parser::ParseFactor()
 {
 	auto expr = ParseUnary();
 
-	while (Check(TokenType::Slash) || Check(TokenType::Star))
+	while (Check(TokenType::Slash) || Check(TokenType::Star) || Check(TokenType::Percentage))
 	{
 		auto& op = Previous();
 		auto right = ParseUnary();
@@ -800,6 +857,24 @@ up<Function> Parser::ParseFunction()
 	{
 		do
 		{
+			if (Check(TokenType::Period))
+			{
+				if (Check(TokenType::Period) && Check(TokenType::Period))
+				{
+					func->IsVariadic = true;
+					break;
+				}
+				else
+				{
+					m_Diagnostics.emplace_back(
+						Previous().Marker,
+						DiagnosticSeverity::Error,
+						"expected variadic '...'"
+					);
+					throw - 1;
+				}
+			}
+
 			func->Params.emplace_back(ParseParam());
 		} while (Check(TokenType::Comma));
 		Ensure(TokenType::RightParenthesis, "expected closing parenthesis ')'");
@@ -848,7 +923,7 @@ up<Block> Parser::ParseBlock()
 {
 	auto block = std::make_unique<Block>();
 	Ensure(TokenType::LeftBrace, "expected block");
-	while (!Check(TokenType::RightBrace))
+	while (!Check(TokenType::RightBrace) && IsGood())
 	{
 		block->Statements.emplace_back(ParseStatement());
 	}
@@ -905,7 +980,7 @@ up<Statement> Parser::ParseStatement()
 	}
 	catch (...) 
 	{
-		while (!Check(TokenType::Semicolon)) { Advance(); }
+		while (!Check(TokenType::Semicolon) && IsGood()) { Advance(); }
 	}
 
 	return std::make_unique<ExpressionStatement>();
@@ -947,8 +1022,11 @@ up<For> Parser::ParseFor()
 		if (!Check(TokenType::Semicolon))
 		{
 			if (IsDefinition()) { cond.Initializer = ParseDefinition(); }
-			else { cond.Initializer = ParseExpression(); }
-			Ensure(TokenType::Semicolon, "expected semicolon ';'");
+			else 
+			{
+				cond.Initializer = ParseExpression();
+				Ensure(TokenType::Semicolon, "expected semicolon ';'");
+			}
 		}
 
 		if (!Check(TokenType::Semicolon))
@@ -962,7 +1040,6 @@ up<For> Parser::ParseFor()
 			cond.Increment = ParseExpression();
 		}
 		loop->Condition = std::move(cond);
-		m_Tok--;
 	}
 	
 

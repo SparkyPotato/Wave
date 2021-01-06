@@ -211,4 +211,14 @@ void InitializerList::Accept(ASTVisitor& visitor, std::any& context)
 	visitor.Visit(*this, context);
 }
 
+void TupleType::Accept(ASTVisitor& visitor, std::any& context)
+{
+	visitor.Visit(*this, context);
+}
+
+void OperatorOverload::Accept(ASTVisitor& visitor, std::any& context)
+{
+	visitor.Visit(*this, context);
+}
+
 }

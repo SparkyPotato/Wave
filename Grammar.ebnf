@@ -8,7 +8,7 @@ definition = funcDefinition | varDefinition | classDefinition | enumDefinition;
 
 funcDefinition = "func", identifier, function;
 function = "(", [ parameters ] ")", [ ":", [ "const" ], type ], block
-parameters = parameter, { ",", parameter };
+parameters = parameter, { ",", parameter }, [ "..." ];
 parameter = identifier, [ ":", [ "const" ], type ];
 
 varDefinition = ( "const" | "static" | "var" ), identifier, [ ":", type ], [ "=", expression, ] ";";
@@ -17,17 +17,21 @@ classDefinition = "class", identifier, [ ":", subIdentifier, { ",", subIdentifie
 	"{", { [ ( "public" | "protected" | "private" ), ":" ], 
 	( varDefinition | classFunc | classDefinition | enumDefinition ) }, "}", ";";
 	
-classFunc = construct | getter | setter | ( [ "static" | "const" ], funcDefinition )
+classFunc = construct | getter | setter | operator | ( [ "static" | "const" ], funcDefinition )
 	| ( [ "const" ], "abstract", identifier, "(", [ parameters ] ")", [ ":", type ], ";" );
 construct = "construct", "(", [ parameters ], ")", block;
 getter = identifier, ":", type, block;
 setter = identifier, "(", parameter, ")", block;
+operator = "static", "op", ( "+" | "-" | "*" | "%" | "/" | "==" | "!=" | ">" | ">=" | "<" | "<=" ), "(", parameter, ",", parameter ")"
+	| "static", "op", ( "!" | "-" ), "(", parameter,  ")";
 	
 enumDefinition = "enum", "{", [ identifier ], { ",", identifier }, "}", ";";
 
-type = ( "int" | "real" | "bool" | "char" | funcType | identifier | ( "typeof", expression ) ), [ "[", expression, "]" ];
+type = ( "int" | "real" | "bool" | "char" | tuple 
+	| funcType | identifier | ( "typeof", expression ) ), [ "[", expression, "]" ];
 funcType = "func", "(", [ types ] ")", [ ":", type ];
 types = type, { ",", type };
+tuple = "tuple", "<", type, { ",", type } ">";
 
 block = "{", { statement }, "}";
 
@@ -58,7 +62,7 @@ and = equality, { "and", equality };
 equality = comparison, { ( "!=" | "==" ), comparison };
 comparison = term, { ( ">" | ">=" | "<" | "<=" ), term ) };
 term = factor, { ( "-" | "+" ), factor ) };
-factor = unary, { ( "/" | "*" ), unary ) };
+factor = unary, { ( "/" | "*" | "%" ), unary ) };
 
 unary = ( ( "!" | "-" ), unary ) | call;
 call = primary, { "(", [ arguments ], ")" };

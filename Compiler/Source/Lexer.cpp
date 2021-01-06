@@ -48,11 +48,24 @@ void Lexer::Lex()
 		case ']': PushToken(TokenType::RightIndex); break;
 		case ',': PushToken(TokenType::Comma); break;
 		case '.': PushToken(TokenType::Period); break;
-		case '-': PushToken(TokenType::Minus); break;
-		case '+': PushToken(TokenType::Plus); break;
+		case '-':
+			if (LookAhead('=')) { PushToken(TokenType::MinusEqual); }
+			else { PushToken(TokenType::Minus); }
+			break;
+		case '+': 
+			if (LookAhead('=')) { PushToken(TokenType::PlusEqual); }
+			else { PushToken(TokenType::Plus); }
+			break;
 		case ':': PushToken(TokenType::Colon); break;
 		case ';': PushToken(TokenType::Semicolon); break;
-		case '*': PushToken(TokenType::Star); break;
+		case '*': 
+			if (LookAhead('=')) { PushToken(TokenType::StarEqual); }
+			else { PushToken(TokenType::Star); }
+			break;
+		case '%':
+			if (LookAhead('=')) { PushToken(TokenType::PercentageEqual); }
+			else { PushToken(TokenType::Percentage); }
+			break;
 		// Double character tokens
 		case '=':
 			PushToken(LookAhead('=') ? TokenType::EqualEqual : TokenType::Equal);
@@ -100,6 +113,7 @@ void Lexer::Lex()
 				m_Marker.Pos += m_Marker.Length;
 				m_Marker.Length = 0;
 			}
+			else if (LookAhead('=')) { PushToken(TokenType::SlashEqual); }
 			else { PushToken(TokenType::Slash); }
 			break;
 		// Literals
@@ -178,11 +192,17 @@ void Lexer::PrettyPrint(const Token& token)
 	case TokenType::Comma: std::cout << ","; break;
 	case TokenType::Period: std::cout << "."; break;
 	case TokenType::Minus: std::cout << "-"; break;
+	case TokenType::MinusEqual: std::cout << "-="; break;
 	case TokenType::Plus: std::cout << "+"; break;
+	case TokenType::PlusEqual: std::cout << "+="; break;
 	case TokenType::Colon: std::cout << ":"; break;
 	case TokenType::Semicolon: std::cout << ";"; break;
 	case TokenType::Slash: std::cout << "/"; break;
+	case TokenType::SlashEqual: std::cout << "/="; break;
 	case TokenType::Star: std::cout << "*"; break;
+	case TokenType::StarEqual: std::cout << "*="; break;
+	case TokenType::Percentage: std::cout << "%"; break;
+	case TokenType::PercentageEqual: std::cout << "%="; break;
 	case TokenType::Not: std::cout << "!"; break;
 	case TokenType::NotEqual: std::cout << "!="; break;
 	case TokenType::Equal: std::cout << "="; break;
@@ -210,6 +230,7 @@ void Lexer::PrettyPrint(const Token& token)
 	case TokenType::Catch: std::cout << "catch"; break;
 	case TokenType::Throw: std::cout << "throw"; break;
 	case TokenType::Enum: std::cout << "enum"; break;
+	case TokenType::Tuple: std::cout << "tuple"; break;
 	case TokenType::Class: std::cout << "class"; break;
 	case TokenType::Construct: std::cout << "construct"; break;
 	case TokenType::Abstract: std::cout << "abstract"; break;
@@ -439,6 +460,7 @@ static std::map<std::string, TokenType> s_Reserved =
 	{ "catch", TokenType::Catch },
 	{ "throw", TokenType::Throw },
 	{ "enum", TokenType::Enum },
+	{ "tuple", TokenType::Tuple },
 	{ "class", TokenType::Class },
 	{ "construct", TokenType::Construct },
 	{ "abstract", TokenType::Abstract },

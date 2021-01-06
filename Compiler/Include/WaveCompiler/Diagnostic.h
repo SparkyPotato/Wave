@@ -14,8 +14,6 @@
 
 #pragma once
 
-#pragma warning(disable: 4251)
-
 #include <filesystem>
 #include <fstream>
 #include <string>
@@ -25,7 +23,7 @@
 namespace Wave {
 
 /// A specific position in a specific file.
-struct WAVEC_API FileMarker
+struct FileMarker
 {
 	/// Construct a FileMarker from an std::ifstream.
 	///
@@ -54,7 +52,7 @@ enum class DiagnosticSeverity
 };
 
 /// Wave compile-time diagnostic.
-struct WAVEC_API Diagnostic
+struct Diagnostic
 {
 	/// Construct a Diagnostic from a file marker.
 	///

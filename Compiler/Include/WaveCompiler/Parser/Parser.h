@@ -19,7 +19,7 @@
 namespace Wave {
 
 /// Parse a list of tokens to form an AST.
-class WAVEC_API Parser
+class Parser
 {
 public:
 	/// Construct a parser.
@@ -80,11 +80,6 @@ private:
 	/// \return The enum definition.
 	up<EnumDefinition> ParseEnumDefinition();
 
-	/// Parse a class function. Expects cursor to be at the first token.
-	///
-	/// \return The class function.
-	up<ClassFunc> ParseClassFunc();
-
 	/// Parse a class method. Expects cursor to be at first token.
 	///
 	/// \return The method.
@@ -100,6 +95,11 @@ private:
 	/// \return The getter or setter.
 	up<ClassFunc> ParseGetterOrSetter();
 
+	/// Parse an operator overload. Expects cursor to be after op keyword.
+	///
+	/// \return the overload.
+	up<OperatorOverload> ParseOperator();
+
 	/// Parse a constructor. Expects cursor to be after the construct.
 	///
 	/// \return The constructor.
@@ -114,6 +114,11 @@ private:
 	///
 	/// \return The type.
 	up<TypeOf> ParseTypeOf();
+
+	/// Parse a tuple type. Expects cursor to be after tuple keyword.
+	///
+	/// \return The tuple.
+	up<TupleType> ParseTuple();
 
 	/// Parse a function type. Expects cursor to be after the func keyword.
 	///
