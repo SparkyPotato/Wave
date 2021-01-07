@@ -12,29 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "Parser/Grammar.h"
+#include "Parser/AST.h"
 
 namespace Wave {
-
-void IntType::Accept(ASTVisitor& visitor, std::any& context)
-{
-	visitor.Visit(*this, context);
-}
-
-void RealType::Accept(ASTVisitor& visitor, std::any& context)
-{
-	visitor.Visit(*this, context);
-}
-
-void CharType::Accept(ASTVisitor& visitor, std::any& context)
-{
-	visitor.Visit(*this, context);
-}
-
-void BoolType::Accept(ASTVisitor& visitor, std::any& context)
-{
-	visitor.Visit(*this, context);
-}
 
 void FuncType::Accept(ASTVisitor& visitor, std::any& context)
 {
@@ -106,7 +86,12 @@ void While::Accept(ASTVisitor& visitor, std::any& context)
 	visitor.Visit(*this, context);
 }
 
-void For::Accept(ASTVisitor& visitor, std::any& context)
+void ConditionFor::Accept(ASTVisitor& visitor, std::any& context)
+{
+	visitor.Visit(*this, context);
+}
+
+void RangeFor::Accept(ASTVisitor& visitor, std::any& context)
 {
 	visitor.Visit(*this, context);
 }
@@ -186,11 +171,6 @@ void Throw::Accept(ASTVisitor& visitor, std::any& context)
 	visitor.Visit(*this, context);
 }
 
-void GenericType::Accept(ASTVisitor& visitor, std::any& context)
-{
-	visitor.Visit(*this, context);
-}
-
 void ArrayType::Accept(ASTVisitor& visitor, std::any& context)
 {
 	visitor.Visit(*this, context);
@@ -212,6 +192,11 @@ void InitializerList::Accept(ASTVisitor& visitor, std::any& context)
 }
 
 void TupleType::Accept(ASTVisitor& visitor, std::any& context)
+{
+	visitor.Visit(*this, context);
+}
+
+void SimpleType::Accept(ASTVisitor& visitor, std::any& context)
 {
 	visitor.Visit(*this, context);
 }

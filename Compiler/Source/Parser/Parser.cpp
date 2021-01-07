@@ -326,7 +326,7 @@ up<Abstract> Parser::ParseAbstract()
 	return abstract;
 }
 
-up<ClassFunc> Parser::ParseGetterOrSetter()
+up<Definition> Parser::ParseGetterOrSetter()
 {
 	auto& ident = Previous();
 	if (Check(TokenType::Colon))
@@ -458,10 +458,34 @@ up<Type> Parser::ParseType()
 
 	switch (tok.Type)
 	{
-	case TokenType::IntegerType: type = std::make_unique<IntType>(); break;
-	case TokenType::RealType: type = std::make_unique<RealType>(); break;
-	case TokenType::CharType: type = std::make_unique<CharType>(); break;
-	case TokenType::BoolType: type = std::make_unique<BoolType>(); break;
+	case TokenType::IntegerType: 
+	{
+		auto t = std::make_unique<SimpleType>();
+		t->T = SimpleType::TypeType::Int;
+		type = std::move(t);
+		break;
+	}
+	case TokenType::RealType: 
+	{
+		auto t = std::make_unique<SimpleType>();
+		t->T = SimpleType::TypeType::Real;
+		type = std::move(t);
+		break;
+	}
+	case TokenType::CharType:
+	{
+		auto t = std::make_unique<SimpleType>();
+		t->T = SimpleType::TypeType::Char;
+		type = std::move(t);
+		break;
+	}
+	case TokenType::BoolType:
+	{
+		auto t = std::make_unique<SimpleType>();
+		t->T = SimpleType::TypeType::Bool;
+		type = std::move(t);
+		break;
+	}
 	case TokenType::Function: type = ParseFuncType(); break;
 	case TokenType::TypeOf: type = ParseTypeOf(); break;
 	case TokenType::Tuple: type = ParseTuple(); break;
@@ -909,11 +933,19 @@ Parameter Parser::ParseParam()
 	{
 		param.IsConst = Check(TokenType::Const);
 		if (!Check(TokenType::Comma) && !Check(TokenType::RightParenthesis)) { param.DataType = ParseType(); }
-		else { m_Tok--; param.DataType = std::make_unique<GenericType>(); }
+		else 
+		{ 
+			m_Tok--; 
+			auto t = std::make_unique<SimpleType>();
+			t->T = SimpleType::TypeType::Generic;
+			param.DataType = std::move(t);
+		}
 	}
 	else
 	{
-		param.DataType = std::make_unique<GenericType>();
+		auto t = std::make_unique<SimpleType>();
+		t->T = SimpleType::TypeType::Generic;
+		param.DataType = std::move(t);
 	}
 	return param;
 }
@@ -995,10 +1027,8 @@ up<While> Parser::ParseWhile()
 	return loop;
 }
 
-up<For> Parser::ParseFor()
+up<Statement> Parser::ParseFor()
 {
-	auto loop = std::make_unique<For>();
-
 	auto tok = m_Tok;
 	bool isRange = false;
 	while (!Check(TokenType::LeftBrace)) 
@@ -1010,14 +1040,21 @@ up<For> Parser::ParseFor()
 
 	if (isRange)
 	{
+		auto loop = std::make_unique<RangeFor>();
+
 		ForRange range;
 		range.Ident = Ensure(TokenType::Identifier, "expected range-based for identifier");
 		Ensure(TokenType::In, "expected keyword in");
 		range.Range = ParseExpression();
 		loop->Condition = std::move(range);
+
+		loop->ExecBlock = ParseBlock();
+		return loop;
 	}
 	else
 	{
+		auto loop = std::make_unique<ConditionFor>();
+
 		ForCond cond;
 		if (!Check(TokenType::Semicolon))
 		{
@@ -1040,12 +1077,10 @@ up<For> Parser::ParseFor()
 			cond.Increment = ParseExpression();
 		}
 		loop->Condition = std::move(cond);
+
+		loop->ExecBlock = ParseBlock();
+		return loop;
 	}
-	
-
-	loop->ExecBlock = ParseBlock();
-
-	return loop;
 }
 
 up<If> Parser::ParseIf()

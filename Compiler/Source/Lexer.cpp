@@ -137,7 +137,8 @@ void Lexer::Lex()
 			m_Marker.Pos += m_Marker.Length;
 			m_Marker.Length = 0;
 			break;
-		case EOF:
+		case '\0':
+			PushToken(TokenType::Null);
 			goto End;
 		default:
 			if (IsAlphabet(c)) { Identifier(c); }

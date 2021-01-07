@@ -12,6 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#ifdef _WIN32
+#include <Windows.h>
+#endif
+
 #include <fstream>
 
 #include "WaveCompiler/Parser/Parser.h"
@@ -23,6 +27,29 @@ using namespace Wave;
 
 int main(int argc, char** argv)
 {
+	// Get colors working on Windows
+#ifdef _WIN32
+
+	HANDLE out = GetStdHandle(STD_OUTPUT_HANDLE);
+	if (out == INVALID_HANDLE_VALUE)
+	{
+		return 1;
+	}
+
+	DWORD outMode = 0;
+	if (!GetConsoleMode(out, &outMode))
+	{
+		return 1;
+	}
+
+	outMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+	if (!SetConsoleMode(out, outMode))
+	{
+		return 1;
+	}
+
+#endif
+
 	ParseArguments(argc, argv);
 
 	for (auto& file : Args::SourceFiles)

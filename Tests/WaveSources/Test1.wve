@@ -1,6 +1,3 @@
 module Tests.Test1;
 
 func main()
-{
-	return 0;
-}

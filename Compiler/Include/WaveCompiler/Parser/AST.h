@@ -47,7 +47,7 @@ class ASTVisitor;
 struct Statement
 {
 	/// Virtual destructor.
-	virtual ~Statement() {}
+	virtual ~Statement() = default;
 
 	/// Accept a visitor.
 	///
@@ -103,7 +103,7 @@ struct Module
 struct Type
 {
 	/// Virtual destructor.
-	virtual ~Type() {}
+	virtual ~Type() = default;
 
 	Token Tok;
 
@@ -114,48 +114,15 @@ struct Type
 	virtual void Accept(ASTVisitor& visitor, std::any& context) = 0;
 };
 
-/// Type of integer.
-struct IntType : Type
+struct SimpleType : Type
 {
-	/// Accept a visitor.
-	///
-	/// \param visitor Visitor to accept.
-	/// \param context Context argument to pass on to visit.
-	virtual void Accept(ASTVisitor& visitor, std::any& context) override;
-};
+	enum class TypeType
+	{
+		Int, Real, Char, Bool, Generic
+	};
 
-/// Type of real.
-struct RealType : Type
-{
-	/// Accept a visitor.
-	///
-	/// \param visitor Visitor to accept.
-	/// \param context Context argument to pass on to visit.
-	virtual void Accept(ASTVisitor& visitor, std::any& context) override;
-};
+	TypeType T;
 
-/// Type of string.
-struct CharType : Type
-{
-	/// Accept a visitor.
-	///
-	/// \param visitor Visitor to accept.
-	/// \param context Context argument to pass on to visit.
-	virtual void Accept(ASTVisitor& visitor, std::any& context) override;
-};
-
-/// Type of bool.
-struct BoolType : Type
-{
-	/// Accept a visitor.
-	///
-	/// \param visitor Visitor to accept.
-	/// \param context Context argument to pass on to visit.
-	virtual void Accept(ASTVisitor& visitor, std::any& context) override;
-};
-
-struct GenericType : Type 
-{
 	/// Accept a visitor.
 	///
 	/// \param visitor Visitor to accept.
@@ -196,18 +163,8 @@ struct Parameter
 	up<Type> DataType;
 };
 
-/// Class function.
-struct ClassFunc : Definition
-{
-	/// Accept a visitor.
-	///
-	/// \param visitor Visitor to accept.
-	/// \param context Context argument to pass on to visit.
-	virtual void Accept(ASTVisitor& visitor, std::any& context) = 0;
-};
-
 /// An abstract method in a class.
-struct Abstract : ClassFunc
+struct Abstract : Definition
 {
 	Token Ident;
 	std::vector<Parameter> Params;
@@ -261,7 +218,7 @@ struct Block : Statement
 	virtual void Accept(ASTVisitor& visitor, std::any& context) override;
 };
 
-struct OperatorOverload : ClassFunc
+struct OperatorOverload : Definition
 {
 	Token Operator;
 	bool IsUnary = false;
@@ -277,7 +234,7 @@ struct OperatorOverload : ClassFunc
 };
 
 /// Class constructor.
-struct Constructor : ClassFunc
+struct Constructor : Definition
 {
 	std::vector<Parameter> Params;
 	up<Block> ExecBlock;
@@ -290,7 +247,7 @@ struct Constructor : ClassFunc
 };
 
 /// Class getter.
-struct Getter : ClassFunc
+struct Getter : Definition
 {
 	Token Ident;
 	up<Type> GetType;
@@ -304,7 +261,7 @@ struct Getter : ClassFunc
 };
 
 /// Class setter.
-struct Setter : ClassFunc
+struct Setter : Definition
 {
 	Token Ident;
 	Parameter SetParam;
@@ -341,7 +298,7 @@ struct Continue : Statement
 struct Expression
 {
 	/// Virtual destructor.
-	virtual ~Expression() {}
+	virtual ~Expression() = default;
 
 	/// Accept a visitor.
 	///
@@ -452,9 +409,22 @@ struct ForRange
 };
 
 /// For loop.
-struct For : Statement
+struct ConditionFor : Statement
 {
-	std::variant<ForCond, ForRange> Condition;
+	ForCond Condition;
+	up<Block> ExecBlock;
+
+	/// Accept a visitor.
+	///
+	/// \param visitor Visitor to accept.
+	/// \param context Context argument to pass on to visit.
+	virtual void Accept(ASTVisitor& visitor, std::any& context) override;
+};
+
+/// For loop.
+struct RangeFor : Statement
+{
+	ForRange Condition;
 	up<Block> ExecBlock;
 
 	/// Accept a visitor.
@@ -545,7 +515,7 @@ struct FunctionDefinition : Definition
 
 
 /// Class member function.
-struct Method : ClassFunc
+struct Method : Definition
 {
 	bool IsStatic = false;
 	bool IsConst = false;
@@ -732,12 +702,6 @@ public:
 	///
 	/// \param node Node to visit.
 	/// \param context Parameter passed to node.Visit().
-	virtual void Visit(BoolType& node, std::any& context) = 0;
-
-	/// Visit an AST Node.
-	///
-	/// \param node Node to visit.
-	/// \param context Parameter passed to node.Visit().
 	virtual void Visit(Break& node, std::any& context) = 0;
 
 	/// Visit an AST Node.
@@ -750,12 +714,6 @@ public:
 	///
 	/// \param node Node to visit.
 	/// \param context Parameter passed to node.Visit().
-	virtual void Visit(CharType& node, std::any& context) = 0;
-
-	/// Visit an AST Node.
-	///
-	/// \param node Node to visit.
-	/// \param context Parameter passed to node.Visit().
 	virtual void Visit(ClassDefinition& node, std::any& context) = 0;
 
 	/// Visit an AST Node.
@@ -763,6 +721,12 @@ public:
 	/// \param node Node to visit.
 	/// \param context Parameter passed to node.Visit().
 	virtual void Visit(ClassType& node, std::any& context) = 0;
+
+	/// Visit an AST Node.
+	///
+	/// \param node Node to visit.
+	/// \param context Parameter passed to node.Visit().
+	virtual void Visit(ConditionFor& node, std::any& context) = 0;
 
 	/// Visit an AST Node.
 	///
@@ -792,12 +756,6 @@ public:
 	///
 	/// \param node Node to visit.
 	/// \param context Parameter passed to node.Visit().
-	virtual void Visit(For& node, std::any& context) = 0;
-
-	/// Visit an AST Node.
-	///
-	/// \param node Node to visit.
-	/// \param context Parameter passed to node.Visit().
 	virtual void Visit(Function& node, std::any& context) = 0;
 
 	/// Visit an AST Node.
@@ -811,12 +769,6 @@ public:
 	/// \param node Node to visit.
 	/// \param context Parameter passed to node.Visit().
 	virtual void Visit(FuncType& node, std::any& context) = 0;
-
-	/// Visit an AST Node.
-	///
-	/// \param node Node to visit.
-	/// \param context Parameter passed to node.Visit().
-	virtual void Visit(GenericType& node, std::any& context) = 0;
 
 	/// Visit an AST Node.
 	///
@@ -846,12 +798,6 @@ public:
 	///
 	/// \param node Node to visit.
 	/// \param context Parameter passed to node.Visit().
-	virtual void Visit(IntType& node, std::any& context) = 0;
-
-	/// Visit an AST Node.
-	///
-	/// \param node Node to visit.
-	/// \param context Parameter passed to node.Visit().
 	virtual void Visit(Literal& node, std::any& context) = 0;
 
 	/// Visit an AST Node.
@@ -871,12 +817,12 @@ public:
 	/// \param node Node to visit.
 	/// \param context Parameter passed to node.Visit().
 	virtual void Visit(OperatorOverload& node, std::any& context) = 0;
-	
+
 	/// Visit an AST Node.
 	///
 	/// \param node Node to visit.
 	/// \param context Parameter passed to node.Visit().
-	virtual void Visit(RealType& node, std::any& context) = 0;
+	virtual void Visit(RangeFor& node, std::any& context) = 0;
 
 	/// Visit an AST Node.
 	///
@@ -889,6 +835,12 @@ public:
 	/// \param node Node to visit.
 	/// \param context Parameter passed to node.Visit().
 	virtual void Visit(Setter& node, std::any& context) = 0;
+
+	/// Visit an AST Node.
+	///
+	/// \param node Node to visit.
+	/// \param context Parameter passed to node.Visit().
+	virtual void Visit(SimpleType& node, std::any& context) = 0;
 
 	/// Visit an AST Node.
 	///

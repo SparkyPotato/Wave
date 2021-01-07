@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include "Grammar.h"
+#include "AST.h"
 
 namespace Wave {
 
@@ -93,7 +93,7 @@ private:
 	/// Parse a getter or a setter. Expects cursor to be at the identifier.
 	///
 	/// \return The getter or setter.
-	up<ClassFunc> ParseGetterOrSetter();
+	up<Definition> ParseGetterOrSetter();
 
 	/// Parse an operator overload. Expects cursor to be after op keyword.
 	///
@@ -213,7 +213,7 @@ private:
 	/// Parse a for loop. Expects cursor to be after the for token.
 	///
 	/// \return The parsed loop.
-	up<For> ParseFor();
+	up<Statement> ParseFor();
 
 	/// Parse an if statement. Expects cursor to be after the if token.
 	///
